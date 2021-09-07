@@ -1,0 +1,6 @@
+__pycache__
+*.pyc
+/resources/options.ini
+emca_debug.log
+/server/build
+CMakeLists.txt.user
