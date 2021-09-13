@@ -5,7 +5,6 @@ This work builds on previous work mainly done by Christoph Kreisl.
 Most of the text below still describes the old version of the system and is not necessarily consistent with the updated version which has undergone major changes.
 Expect further, potentially large, changes to both documentation and the code.
 Until further announcement, treat this only as a preview.
-The server-side code necessary to connect EMCA to Mitsuba will be released shortly.
 
 Thank you for your interest in EMCA,
 
@@ -75,8 +74,7 @@ You can find the server code in the `server` folder.
 For more flexibility the server code is provided as shared library.
 This should make it easier to integrate it into other rendering systems.
 The necessary Mitsuba modifications which have been applied can be found here:
-
-**An updated version for the VMV 2021 version will be released shortly. The old version published by Chris is not compatible with the new version.**
+[Mitsuba-EMCA](https://github.com/cgtuebingen/mitsuba-emca)
 
 In general 'any' render system can be used. For this purpose the EMCA server interface must be adapted to the respective render system.
 In addition, the renderer must be modified so that it can render deterministic images.
@@ -199,6 +197,12 @@ If the rendering algorithm uses next event estimation, shadow rays can be shown 
 
 * Rectangle selection tool can be (de-)activated by pressing the 'R' key.
 
+#### Depth-Buffer issues with Intel GPUs
+When using the Mesa driver for Intel GPUs, scene contents aren't always ordered properly if scene opacity is at 100%.
+AMD and Nvidia GPUs work fine.
+This seems to be a known issue when using VTK under Qt5 with PySide2.
+We'll fix this as soon as we find a solution.
+
 <a name="data_view"></a>
 
 ### Data View
@@ -264,7 +268,7 @@ The ability to filter data by specific criteria offers more flexibility regardin
 Therefore, we provide a filter algorithm which allows for applying multiple filters with various filter criteria based on the path data. Users can apply one or more filter constraints which are applied in combination.
 
 <a name="socket_package_flow"></a>
-### Socket Package Flow Diagram
+### Socket Package Flow Diagram (old version)
 <object data="https://github.com/ckreisl/emca/blob/readme/images/emca_tcp_flow.pdf" type="application/pdf" width="700px" height="700px">
     <embed src="https://github.com/ckreisl/emca/blob/readme/images/emca_tcp_flow.pdf">
         <p>This browser does not support PDFs. Please download the PDF to view it: <a href="https://github.com/ckreisl/emca/blob/readme/images/emca_tcp_flow.pdf">Download PDF</a>.</p>
@@ -272,7 +276,7 @@ Therefore, we provide a filter algorithm which allows for applying multiple filt
 </object>
 
 <a name="demo_video"></a>
-### Video Demo
+### Video Demo (old version)
 [Click Me - Vimeo](https://vimeo.com/397632936)
 
 <a name="license"></a>
