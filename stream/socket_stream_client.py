@@ -176,7 +176,7 @@ class SocketStreamClient(QThread):
                 break
 
             # check if message is a plugin
-            plugin = self._model.plugins_handler.get_plugin_by_flag(msg)
+            plugin = self._model.plugins_handler.get_plugin_by_id(msg)
             state = ServerMsg.get_server_msg(msg)
 
             #logging.info('msg={} is state={} or plugin={}'.format(msg, state, plugin))

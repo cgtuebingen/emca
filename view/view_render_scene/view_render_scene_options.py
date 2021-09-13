@@ -22,6 +22,7 @@
     SOFTWARE.
 """
 
+import typing
 from core.pyside2_uic import loadUi
 from PySide2.QtCore import Slot
 from PySide2.QtWidgets import QWidget
@@ -217,7 +218,7 @@ class ViewRenderSceneOptions(QWidget):
     def pb_reset_3d_data_options_pressed(self):
         self._controller.scene.reset_heatmap_options()
     
-    def load_path_options(self, path_options : dict):
+    def load_path_options(self, path_options : typing.Dict[str, typing.Any]):
         if self._propagate_signals:
             self._propagate_signals = False
 
@@ -232,7 +233,7 @@ class ViewRenderSceneOptions(QWidget):
 
             self._propagate_signals = True
 
-    def load_scene_options(self, scene_options : dict):
+    def load_scene_options(self, scene_options : typing.Dict[str, typing.Any]):
         if self._propagate_signals:
             self._propagate_signals = False
 
@@ -244,7 +245,7 @@ class ViewRenderSceneOptions(QWidget):
 
             self._propagate_signals = True
 
-    def load_heatmap_options(self, heatmap_options : dict):
+    def load_heatmap_options(self, heatmap_options : typing.Dict[str, typing.Any]):
         if self._propagate_signals:
             self._propagate_signals = False
 

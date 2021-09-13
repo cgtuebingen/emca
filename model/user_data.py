@@ -22,6 +22,7 @@
     SOFTWARE.
 """
 
+import typing
 from stream.stream import Stream
 
 
@@ -77,7 +78,7 @@ class UserData(object):
                 raise Exception('unknown type '+type_identifier)
 
     @property
-    def data(self) -> dict:
+    def data(self) -> typing.Dict[str, typing.Any]:
         """
         Returns a data dict with set information
         """

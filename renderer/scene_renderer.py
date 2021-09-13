@@ -22,6 +22,7 @@
     SOFTWARE.
 """
 
+import typing
 from model.render_data import RenderData
 from renderer.path import Path
 from typing import Union
@@ -115,11 +116,11 @@ class SceneRenderer(object):
         }
     
     @property
-    def path_options(self) -> dict:
+    def path_options(self) -> typing.Dict[str, typing.Any]:
         return self._path_options
     
     @path_options.setter
-    def path_options(self, options : dict):
+    def path_options(self, options : typing.Dict[str, typing.Any]):
         updated = dict(self._path_options, **options)
         if updated != self._path_options:
             self._path_options = dict(self._path_options, **options)
@@ -128,11 +129,11 @@ class SceneRenderer(object):
                 self._controller.scene.update_path_options(updated)
 
     @property
-    def scene_options(self) -> dict:
+    def scene_options(self) -> typing.Dict[str, typing.Any]:
         return self._scene_options
 
     @scene_options.setter
-    def scene_options(self, options : dict):
+    def scene_options(self, options : typing.Dict[str, typing.Any]):
         updated = dict(self._scene_options, **options)
         if updated != self._scene_options:
             self._scene_options = updated
@@ -141,11 +142,11 @@ class SceneRenderer(object):
                 self._controller.scene.update_scene_options(updated)
     
     @property
-    def heatmap_options(self) -> dict:
+    def heatmap_options(self) -> typing.Dict[str, typing.Any]:
         return self._heatmap_options
 
     @heatmap_options.setter
-    def heatmap_options(self, options : dict):
+    def heatmap_options(self, options : typing.Dict[str, typing.Any]):
         updated = dict(self._heatmap_options, **options)
         if updated != self._heatmap_options:
             self._heatmap_options = updated
@@ -208,7 +209,7 @@ class SceneRenderer(object):
         return self._renderer
 
     @property
-    def paths(self) -> dict:
+    def paths(self) -> typing.Dict[int, Path]:
         """
         Returns all traced paths within the scene
         """
@@ -306,7 +307,7 @@ class SceneRenderer(object):
         # start a timer to update in a while - do not update for each mesh
         self.start_widget_update_timer()
 
-    def process_scene_info(self, scene_info : dict):
+    def process_scene_info(self, scene_info : typing.Dict[str, typing.Any]):
         if scene_info is None:
             max_value = 0.0
             if len(self._meshes) > 0:

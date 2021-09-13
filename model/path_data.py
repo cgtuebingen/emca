@@ -28,7 +28,6 @@ import typing
 from stream.stream import Stream
 from model.intersection_data import IntersectionData
 from model.user_data import UserData
-from collections import OrderedDict
 
 class PathData(UserData):
 
@@ -44,7 +43,7 @@ class PathData(UserData):
         self._path_depth = None
         self._path_origin = None
         self._final_estimate = None
-        self._dict_intersections = OrderedDict()
+        self._dict_intersections = {} # ordered dict (since Python 3.7)
         self._intersection_count = 0
 
     def deserialize(self, stream : Stream):
@@ -98,7 +97,7 @@ class PathData(UserData):
         return self._path_depth
 
     @property
-    def intersections(self) -> typing.OrderedDict[int, IntersectionData]:
+    def intersections(self) -> typing.Dict[int, IntersectionData]:
         """
         Returns the a dict containing all path vertices
         :return: dict{intersection_idx, intersection object}

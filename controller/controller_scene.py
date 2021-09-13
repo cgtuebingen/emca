@@ -22,6 +22,7 @@
     SOFTWARE.
 """
 
+import typing
 from PySide2.QtCore import Slot
 from core.messages import StateMsg
 
@@ -73,14 +74,14 @@ class ControllerRenderScene(object):
     def reset_heatmap_options(self):
         self._view.view_render_scene.scene_renderer.reset_heatmap_options()
 
-    def update_path_options(self, path_options : dict):
+    def update_path_options(self, path_options : typing.Dict[str, typing.Any]):
         self._view.view_render_scene.scene_renderer.path_options = path_options
         self._view.view_render_scene_options.load_path_options(path_options)
 
-    def update_scene_options(self, scene_options : dict):
+    def update_scene_options(self, scene_options : typing.Dict[str, typing.Any]):
         self._view.view_render_scene.scene_renderer.scene_options = scene_options
         self._view.view_render_scene_options.load_scene_options(scene_options)
 
-    def update_heatmap_options(self, heatmap_options : dict):
+    def update_heatmap_options(self, heatmap_options : typing.Dict[str, typing.Any]):
         self._view.view_render_scene.scene_renderer.heatmap_options = heatmap_options
         self._view.view_render_scene_options.load_heatmap_options(heatmap_options)

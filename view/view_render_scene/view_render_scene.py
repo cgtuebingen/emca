@@ -22,6 +22,7 @@
     SOFTWARE.
 """
 
+import typing
 from renderer.scene_renderer import SceneRenderer
 from PySide2.QtWidgets import QWidget
 from core.pyside2_uic import loadUi
@@ -131,7 +132,7 @@ class ViewRenderScene(QWidget):
         """
         self._scene_renderer.load_mesh(mesh_data)
 
-    def process_scene_info(self, scene_info : dict):
+    def process_scene_info(self, scene_info : typing.Dict[str, typing.Any]):
         self._scene_renderer.process_scene_info(scene_info)
 
     def load_traced_paths(self, render_data):

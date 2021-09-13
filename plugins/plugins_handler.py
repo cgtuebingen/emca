@@ -22,6 +22,10 @@
     SOFTWARE.
 """
 
+import typing
+import numpy as np
+from model.render_data import RenderData
+from stream.stream import Stream
 from core.plugin import PluginType
 from plugins.plugins_view_container import PluginsViewContainer
 import plugins
@@ -64,45 +68,35 @@ class PluginsHandler(object):
         for _, value in self._plugins_view_container.items():
             value.plugin.apply_theme(theme)
 
-    def enable_plugins(self, enable):
+    def enable_plugins(self, enable : bool):
         """
         Calls the tool container enable_tool_btn function.
         Enables the view Plugin button item
-        :param enable:
-        :return:
         """
         for _, value in self._plugins_view_container.items():
             if value.plugin.plugin_type is PluginType.CORE_PLUGIN:
                 value.enable_plugin_btn(enable)
 
-    def enable_plugin_by_id(self, plugin_id, enable):
+    def enable_plugin_by_id(self, plugin_id : int, enable : bool):
         """
         Enables the plugin btn based on the plugin id
-        :param plugin_id: integer
-        :param enable: boolean
-        :return:
         """
         plugin_container_item = self._plugins_view_container.get(plugin_id, None)
         if plugin_container_item:
             plugin_container_item.enable_plugin_btn(enable)
 
-    def request_plugin(self, flag, stream):
+    def request_plugin(self, plugin_id : int, stream : Stream):
         """
         Calls the Tool Container
-        :param flag: unique_tool_id
-        :param stream: socket stream
-        :return:
         """
-        plugins_view_container = self._plugins_view_container.get(flag, None)
+        plugins_view_container = self._plugins_view_container.get(plugin_id, None)
         if plugins_view_container:
             plugins_view_container.serialize(stream)
 
-    def init_data(self, render_data):
+    def init_data(self, render_data : RenderData):
         """
         Calls Tool Container init_render_data function.
         All plugins will be informed about a new render data package
-        :param render_data:
-        :return:
         """
         for _, value in self._plugins_view_container.items():
             value.init_render_data(render_data)
@@ -111,32 +105,28 @@ class PluginsHandler(object):
         """
         Calls the Tool Container prepare_new_data function.
         Informs all plugins that a new render data package is requested
-        :return:
         """
         for _, value in self._plugins_view_container.items():
             value.prepare_new_data()
 
-    def update_path_indices(self, indices):
+    def update_path_indices(self, indices : np.ndarray):
         """
         Calls the Tool Container update_path_indices function.
         Informs all plugins about selected path index/indices
         :param indices: np.array[path_index,...]
-        :return:
         """
         for _, value in self._plugins_view_container.items():
             value.update_path_indices(indices)
 
-    def select_path(self, index):
+    def select_path(self, path_index : typing.Optional[int]):
         """
         Calls the Tool Container select_path function.
         Updates all tool views with the current selected path
-        :param index: path_index
-        :return:
         """
         for _, value in self._plugins_view_container.items():
-            value.select_path(index)
+            value.select_path(path_index)
 
-    def select_intersection(self, path_idx, its_idx):
+    def select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         """
         Calls the Plugin Container select_intersection function.
         Updates all tool views with the current selected intersection
@@ -144,14 +134,14 @@ class PluginsHandler(object):
         for _, value in self._plugins_view_container.items():
             value.select_intersection(path_idx, its_idx)
 
-    def get_plugin_by_flag(self, flag):
+    def get_plugin_by_id(self, plugin_id : int):
         """
         Returns the corresponding tool given the flag (unique_tool_id),
         if no tool was found None is returned
         :param flag: unique_tool_id
         :return: tool or None
         """
-        plugins_view_container = self._plugins_view_container.get(flag, None)
+        plugins_view_container = self._plugins_view_container.get(plugin_id, None)
         if plugins_view_container:
             return plugins_view_container.plugin
         return None
@@ -165,7 +155,7 @@ class PluginsHandler(object):
             plugin.close()
 
     @property
-    def plugins(self):
+    def plugins(self) -> typing.Dict[int, PluginsViewContainer]:
         """
         Returns the Plugins View Container dictionary {unique_tool_id : PluginsViewContainer, ...}
         :return:

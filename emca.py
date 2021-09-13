@@ -64,6 +64,9 @@ class EMCAClient(object):
 
 
 if __name__ == '__main__':
+    if sys.version_info < (3, 7):
+        sys.exit("Python 3.7 or newer required.")
+
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
     InitLogSystem()
     app = QApplication(sys.argv)

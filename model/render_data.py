@@ -42,7 +42,7 @@ class RenderData(object):
         # amount of used samples per pixel
         self._sample_count = -1
         # {sample_index / path_index : PathData}
-        self._dict_paths = {}
+        self._dict_paths = {}  # ordered dict (since Python 3.7)
 
     def deserialize(self, stream : Stream):
         """

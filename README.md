@@ -142,7 +142,7 @@ If you want to use your own DataApi with your own functions and types you can ch
 <a name="emca_client"></a>
 
 ## EMCA Client
-EMCA is based on **Python 3.8**. To install and load all necessary dependencies use the requirements.txt file.
+EMCA is based on **Python 3.7**. To install and load all necessary dependencies use the requirements.txt file.
 ```
 pip3 install -r requirements.txt
 ```
