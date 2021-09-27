@@ -1,10 +1,9 @@
 # EMCA — Explorer of Monte Carlo based Algorithms
 
-## Note - VMV 2021 version - this is just a preview
+## Note - VMV 2021 version - documentation not yet updated
 This work builds on previous work mainly done by Christoph Kreisl.
 Most of the text below still describes the old version of the system and is not necessarily consistent with the updated version which has undergone major changes.
-Expect further, potentially large, changes to both documentation and the code.
-Until further announcement, treat this only as a preview.
+Expect further changes to both documentation and the code.
 
 Thank you for your interest in EMCA,
 
@@ -36,15 +35,16 @@ An initial prototype was developed in 2020 by Nils Blank as his Bachelor's Thesi
 For VMV 2021, the collection of three-dimensional data has been re-implemented from scratch
 and allows the collection of not only scalar heat maps, but fully RGB-colored data on the entire 3D scene geometry.
 
-**The final BibTex entry for the VMV 2021 version follow as soon as it is available, this is just a placeholder:**
-
 ```
-@inproceedings{ruppert2021emca,
-  booktitle = {Vision, Modeling \& Visualization},
+@inproceedings {ruppert2021emca,
+  booktitle = {Vision, Modeling, and Visualization},
+  editor = {Andres, Bjoern and Campen, Marcel and Sedlmair, Michael},
   title = {{EMCA: Explorer of Monte Carlo based Algorithms}},
-  author = {Ruppert, Lukas and Kreisl, Christoph and Blank, Nils and Herholz, Sebastian and Lensch, Hendrik P.A.},
+  author = {Ruppert, Lukas and Kreisl, Christoph and Blank, Nils and Herholz, Sebastian and Lensch, Hendrik P. A.},
   year = {2021},
-  publisher = {The Eurographics Association}
+  publisher = {The Eurographics Association},
+  ISBN = {978-3-03868-161-8},
+  DOI = {10.2312/vmv.20211377}
 }
 ```
 
