@@ -5,6 +5,8 @@ More precisely, it is designed to visualize and analyze unidirectional path trac
 The framework consists of two parts, a server part which serves as an interface to arbitrary rendering systems and a client which takes over the visualization.
 The client is written in Python and can be easily extended.
 
+![EMCA Overview](resources/emca.png)
+
 EMCA works on a per-pixel basis which means that instead of pre-computing and saving all the necessary data of the whole rendered image during the render process,
 everything is calculated directly at run-time. The data is collected and generated according to the pixel selected by the user.
 
@@ -61,8 +63,6 @@ The same applies to the vtk version 9.x package.
 In case it can't be installed via `pip`, download the latest wheel file for your Python version from https://vtk.org/download/ or try your system's package manager.
 
 For an overview of EMCA and its capabilities, have a look at the paper.
-
-![View One](https://github.com/ckreisl/emca/blob/readme/images/emca_render_sample_view.png)
 
 <a name="overview"></a>
 
