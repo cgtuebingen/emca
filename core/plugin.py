@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +25,13 @@
 
 from PySide2.QtWidgets import QWidget
 from enum import Enum
+import numpy as np
 import abc
+import typing
+from model.pixel_data import PixelData
+
+from renderer.scene_renderer import SceneRenderer
+from stream.stream import Stream
 
 
 class PluginType(Enum):
@@ -63,7 +70,7 @@ class Plugin(QWidget):
         self._scene_renderer = None
 
     @property
-    def flag(self):
+    def flag(self) -> int:
         """
         Returns the unique identifier of the plugin
         :return: flag (unique identifier)
@@ -71,7 +78,7 @@ class Plugin(QWidget):
         return self._flag
 
     @property
-    def name(self):
+    def name(self) -> str:
         """
         Returns the name of the plugin
         :return: plugin name
@@ -79,7 +86,7 @@ class Plugin(QWidget):
         return self._name
 
     @property
-    def plugin_type(self):
+    def plugin_type(self) -> PluginType:
         """
         Returns the PluginType
         :return: PluginType.CORE_PLUGIN | PluginType.SERVER_PLUGIN
@@ -87,7 +94,7 @@ class Plugin(QWidget):
         return self._plugin_type
 
     @property
-    def scene_renderer(self):
+    def scene_renderer(self) -> SceneRenderer:
         """
         Return the renderer
         Allows plugin full control of renderer
@@ -96,7 +103,7 @@ class Plugin(QWidget):
         return self._scene_renderer
 
     @scene_renderer.setter
-    def scene_renderer(self, scene_renderer):
+    def scene_renderer(self, scene_renderer : SceneRenderer):
         """
         Sets the renderer
         Allows plugin full control of renderer
@@ -104,24 +111,19 @@ class Plugin(QWidget):
         """
         self._scene_renderer = scene_renderer
 
-    def send_update_path_indices(self, indices, add_item):
+    def send_update_path_indices(self, indices : np.ndarray, add_item : bool):
         """
         This function gets overwritten by the plugin view container,
         which will connect this function with the controller
-        :param indices: numpy array:
-        :param add_item: bool, add values or not:
-        :return:
         """
 
-    def send_select_path(self, index):
+    def send_select_path(self, path_idx : typing.Optional[int]):
         """
         This function gets overwritten by the plugin view container,
         which will connect this function with the controller
-        :param index:
-        :return:
         """
 
-    def send_select_intersection(self, path_idx, its_idx):
+    def send_select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         """
         This function gets overwritten by the plugin view container,
         which will connect this function with the controller
@@ -136,58 +138,47 @@ class Plugin(QWidget):
         """
 
     @abc.abstractmethod
-    def init_render_data(self, render_data):
+    def init_pixel_data(self, pixel_data : PixelData):
         """
         Apply current pixel render data to plugins
-        :param render_data:
-        :return:
         """
 
     @abc.abstractmethod
     def prepare_new_data(self):
         """
         Resets all views and prepares class for new incoming pixel data package
-        :return:
         """
 
     @abc.abstractmethod
-    def update_path_indices(self, indices):
+    def update_path_indices(self, indices : np.ndarray):
         """
         Sends list of path indices to all views to update selected paths
-        :param indices: Numpy array [(path_index),...]
-        :return:
         """
 
     @abc.abstractmethod
-    def select_path(self, index):
+    def select_path(self, path_idx : typing.Optional[int]):
         """
         Will be called if a path element is selected within the view
-        :param index: path_idx
-        :return:
         """
 
     @abc.abstractmethod
-    def select_intersection(self, path_idx, its_idx):
+    def select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         """
         Will be called if a intersection element is selected within the view
         """
 
     @abc.abstractmethod
-    def serialize(self, stream):
+    def serialize(self, stream : Stream):
         """
         Send data to server
-        :param stream:
-        :return:
         """
 
     @abc.abstractmethod
-    def deserialize(self, stream):
+    def deserialize(self, stream : Stream):
         """
         Receive data from server
         Will be handled within an extra thread,
-        therefor do not update Qt view elements within this function
-        :param stream:
-        :return:
+        therefore do not update Qt view elements within this function
         """
 
     @abc.abstractmethod
@@ -195,5 +186,4 @@ class Plugin(QWidget):
         """
         This function will be called after deserialize is finished
         It will update all data within the view
-        :return:
         """

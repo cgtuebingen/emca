@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +23,7 @@
     SOFTWARE.
 """
 
+from PySide2.QtGui import QKeyEvent
 from model.render_info import RenderInfo
 from core.pyside2_uic import loadUi
 from PySide2.QtWidgets import QWidget
@@ -29,6 +31,12 @@ from PySide2.QtWidgets import QApplication
 from PySide2.QtCore import Slot
 from PySide2.QtCore import Qt
 import os
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class ViewRenderSettings(QWidget):
@@ -52,14 +60,14 @@ class ViewRenderSettings(QWidget):
 
         self.btnClose.clicked.connect(self.close)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
         :param controller: Controller
         :return:
         """
         self._controller = controller
-        self.sbSampleCount.valueChanged.connect(controller.update_render_info_sample_count)
+        self.sbSampleCount.valueChanged.connect(self.sb_update_sample_count)
 
     def update_render_info(self, render_info : RenderInfo):
         """
@@ -71,20 +79,16 @@ class ViewRenderSettings(QWidget):
         self.labelSceneName.setText(render_info.scene_name)
         self.sbSampleCount.setValue(render_info.sample_count)
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event : QKeyEvent):
         """
         Handles key press event, if enter is pressed the submit button will be triggered
-        :param event:
-        :return:
         """
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self.btn_submit(True)
 
     @Slot(int, name='sb_update_sample_count')
-    def sb_update_sample_count(self, value):
+    def sb_update_sample_count(self, value : int):
         """
         Informs the controller to update the sample count of render info
-        :param value: integer
-        :return:
         """
         self._controller.update_render_info_sample_count(value)

@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,15 +23,13 @@
     SOFTWARE.
 """
 
-from core.point2 import Point2i
-from core.color3 import Color3f
+from PySide2.QtCore import QPoint
 from PySide2.QtGui import QPixmap
 from PySide2.QtGui import QColor
 from PySide2.QtGui import QIcon
-from PySide2.QtCore import QPoint
 
 
-class PixelIcon(object):
+class PixelIcon(QIcon):
 
     """
         PixelIcon
@@ -38,63 +37,21 @@ class PixelIcon(object):
         Pixel color, the position. Is used to display the selected pixel as icon in the view
     """
 
-    def __init__(self):
-        self._pixel_icon = QIcon()
-        self._pixel_pos = QPoint()
-        self._color = QColor()
-        self._pixmap = QPixmap(16, 16)
+    def __init__(self, color : QColor, pos : QPoint):
+        super().__init__()
+        self._pos = pos
+        self._color = color
+        pixmap = QPixmap(16,16)
+        pixmap.fill(self._color)
+        self.addPixmap(pixmap)
 
     @property
-    def icon(self):
-        """
-        Returns the pixel icon
-        :return: QIcon
-        """
-        return self._pixel_icon
+    def pos(self) -> QPoint:
+        return self._pos
 
     @property
-    def pixel_pos(self):
-        """
-        Returns the pixel position
-        :return: QPoint
-        """
-        return self._pixel_pos
+    def color(self) -> QColor:
+        return self._color
 
-    @property
-    def pixel_pos_point2i(self):
-        """
-        Transforms the QPoint pixel position into a Point2i and returns the data type
-        :return: Point2i
-        """
-        return Point2i(self._pixel_pos.x(), self._pixel_pos.y())
-
-    @property
-    def pixel_color_color3f(self):
-        """
-        Transform a QColor into a Color3f object with the pixel color information
-        :return: Color3f
-        """
-        return Color3f(self._color.red(), self._color.green(), self._color.blue(), self._color.alpha())
-
-    def set_pixel(self, pixmap, pixel):
-        """
-        Sets the pixel position and the icon with the pixmap
-        :param pixmap: QPixmap
-        :param pixel: QPoint
-        :return:
-        """
-        self._pixel_pos = pixel
-        q_image = pixmap.toImage()
-        self._color = q_image.pixelColor(pixel)
-        self._pixmap.fill(self._color)
-        self._pixel_icon.addPixmap(self._pixmap)
-
-    def get_pixel_str(self):
-        """
-        Returns a string with class information
-        :return: str
-        """
-        return '({},{})'.format(self._pixel_pos.x(),
-                                self._pixel_pos.y())
-
-
+    def __str__(self) -> str:
+        return '({},{})'.format(self._pos.x(), self._pos.y())

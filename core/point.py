@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +24,7 @@
 """
 
 import numpy as np
-
+from core.vector import Vec3f
 
 class Point(np.ndarray):
 
@@ -73,3 +74,182 @@ class Point(np.ndarray):
         # arr.view(Point).
         self.decimals = getattr(obj, 'decimals', 2)
         # We do not need to return anything
+
+
+class Point2f(Point):
+
+    """
+        Point2f
+        Represents a point2 float class
+    """
+
+    def __new__(subtype, x=0, y=0):
+        obj = super(Point2f, subtype).__new__(Point2f, (2,), np.float32)
+        obj[0] = x
+        obj[1] = y
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    def to_string(self):
+        return '[{}, {}]'.format(self[0], self[1])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}]'.format(self.decimals,
+                                               self[0],
+                                               self[1])
+
+
+class Point2i(Point):
+    def __new__(subtype, x=0, y=0):
+        obj = super(Point2i, subtype).__new__(Point2i, (2,), np.int32)
+        obj[0] = x
+        obj[1] = y
+        obj.decimals = 0
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    def to_string(self):
+        return '[{}, {}]'.format(self[0], self[1])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}]'.format(self.decimals,
+                                               self[0],
+                                               self[1])
+
+
+class Point3f(Point):
+
+    """
+        Point3f
+        Represents a point3 float class
+    """
+
+    def __new__(subtype, x=0, y=0, z=0):
+        obj = super(Point3f, subtype).__new__(Point3f, (3,), np.float32)
+        obj[0] = x
+        obj[1] = y
+        obj[2] = z
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    @property
+    def z(self):
+        return self[2]
+
+    @z.setter
+    def z(self, new_z):
+        self[2] = new_z
+
+    def dir_to(self, dest):
+        if dest is None:
+            return None
+        dir_vec = dest-self
+        dir_vec_norm = dir_vec/np.linalg.norm(dir_vec)
+        return Vec3f(dir_vec_norm[0], dir_vec_norm[1], dir_vec_norm[2])
+
+    def to_string(self):
+        return '[{}, {}, {}]'.format(self[0], self[1], self[2])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}, {3:.{0}f}]'.format(self.decimals,
+                                                          self[0],
+                                                          self[1],
+                                                          self[2])
+
+
+class Point3i(Point):
+
+    """
+        Point3i
+        Represents point3 integer class
+    """
+
+    def __new__(subtype, x=0, y=0, z=0):
+        obj = super(Point3i, subtype).__new__(Point3i, (3,), np.int32)
+        obj[0] = x
+        obj[1] = y
+        obj[2] = z
+        obj.decimals = 0
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    @property
+    def z(self):
+        return self[2]
+
+    @z.setter
+    def z(self, new_z):
+        self[2] = new_z
+
+    def to_string(self):
+        return '[{}, {}, {}]'.format(self[0], self[1], self[2])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}, {3:.{0}f}]'.format(self.decimals,
+                                                          self[0],
+                                                          self[1],
+                                                          self[2])

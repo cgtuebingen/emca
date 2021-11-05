@@ -1,7 +1,8 @@
 /*
-	EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
-	comes with an Apache License 2.0
-	(c) Christoph Kreisl 2020
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
+    comes with an Apache License 2.0
+    (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
 	Licensed to the Apache Software Foundation (ASF) under one
 	or more contributor license agreements.  See the NOTICE file
@@ -36,7 +37,7 @@ public:
     virtual void renderPixel(uint32_t x, uint32_t y) = 0;
     virtual std::string getRendererName() const = 0;
     virtual std::string getSceneName() const = 0;
-    virtual size_t getSampleCount() const = 0;
+    virtual uint32_t getSampleCount() const = 0;
     virtual void setSampleCount(size_t sampleCount) = 0;
     virtual Camera getCameraData() const = 0;
     virtual std::vector<Mesh> getMeshData() const = 0;

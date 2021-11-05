@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +23,12 @@
     SOFTWARE.
 """
 
-from filter.filter_type import FilterType
+from filter.filter_settings import FilterType
 import logging
 import time
 import numpy as np
+
+from model.pixel_data import PixelData
 
 
 class Filter(object):
@@ -33,7 +36,7 @@ class Filter(object):
     """
         Filter
         Filters the Render data set depending on user added data.
-        (bool, float, point2i, point2f, point3i, point3f, color3f)
+        (bool, float, point2i, point2f, point3i, point3f, color4f)
         All paths which satisfy the constraints will be displayed
     """
 
@@ -72,26 +75,26 @@ class Filter(object):
             self._paths |= f[1]
         return self.path_indices()
 
-    def apply_filters(self, render_data):
+    def apply_filters(self, pixel_data : PixelData):
         """
         Applies all active filters to a new Render data set.
         Returns a numpy array containing all path indices which satisfy the filter constraints
-        :param render_data:
+        :param pixel_data:
         :return: numpy array with path indices
         """
         # apply filters to new data and update sets of path ids
         self._paths.clear()
         if len(self._filters) > 0:
             for key, f in self._filters.items():
-                self.filter(f[0], render_data)
+                self.filter(f[0], pixel_data)
         return self.path_indices()
 
-    def filter(self, filter_settings, render_data):
+    def filter(self, filter_settings, pixel_data : PixelData):
         """
         Applies a filter item with filter_settings to the Render data
         Returns a numpy array containing all path indices which satisfy the filter constraints
         :param filter_settings:
-        :param render_data:
+        :param pixel_data:
         :return: numpy array with path indices
         """
         start = time.time()
@@ -99,19 +102,19 @@ class Filter(object):
         search_key = filter_settings.get_text()
 
         if search_key == "sampleIndex":
-            for path_key, path in render_data.dict_paths.items():
+            for path_key, path in pixel_data.dict_paths.items():
                 if self.compare(path.sample_idx, filter_settings):
                     xs.add(path_key)
         elif search_key == "pathDepth":
-            for path_key, path in render_data.dict_paths.items():
+            for path_key, path in pixel_data.dict_paths.items():
                 if self.compare(path.path_depth, filter_settings):
                     xs.add(path_key)
         elif search_key == "finalEstimate":
-            for path_key, path in render_data.dict_paths.items():
+            for path_key, path in pixel_data.dict_paths.items():
                 if self.compare(path.final_estimate, filter_settings):
                     xs.add(path_key)
         else:
-            for path_key, path in render_data.dict_paths.items():
+            for path_key, path in pixel_data.dict_paths.items():
                 entry = path.data.get(search_key, None)
                 if entry:
                     if self.compare(entry, filter_settings):

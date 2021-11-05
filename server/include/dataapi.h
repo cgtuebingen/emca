@@ -1,7 +1,8 @@
 /*
-    EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
     comes with an Apache License 2.0
     (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -42,61 +43,61 @@ class DataApi {
 public:
     virtual ~DataApi() = default;
 
-    void setPathIdx(int32_t sampleIdx);
-    void setDepthIdx(int32_t depthIdx);
+    void setPathIdx(uint32_t sampleIdx);
+    void setDepthIdx(uint32_t depthIdx);
 
     void setPathOrigin(const Point3f& origin);
     void setIntersectionPos(const Point3f& pos);
     void setNextEventEstimationPos(const Point3f& pos, bool visible);
-    void setIntersectionEstimate(const Color3f& estimate);
-    void setIntersectionEmission(const Color3f& emission);
-    void setFinalEstimate(const Color3f& estimate);
+    void setIntersectionEstimate(const Color4f& estimate);
+    void setIntersectionEmission(const Color4f& emission);
+    void setFinalEstimate(const Color4f& estimate);
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T> || std::is_same_v<T, std::string>, int> = 0>
     void addPathData(const std::string& s, const T& val) {
-        if(m_isCollecting)
+        if (m_isCollecting)
             m_paths.at(m_currentSampleIdx).add(s, val);
     }
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
     void addPathData(const std::string& s, const T& val1, const T& val2) {
-        if(m_isCollecting)
+        if (m_isCollecting)
             m_paths.at(m_currentSampleIdx).add(s, val1, val2);
     }
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
     void addPathData(const std::string& s, const T& val1, const T& val2, const T& val3) {
-        if(m_isCollecting)
+        if (m_isCollecting)
             m_paths.at(m_currentSampleIdx).add(s, val1, val2, val3);
     }
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
     void addPathData(const std::string& s, const T& val1, const T& val2, const T& val3, const T& val4) {
-        if(m_isCollecting)
+        if (m_isCollecting)
             m_paths.at(m_currentSampleIdx).add(s, val1, val2, val3, val4);
     }
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T> || std::is_same_v<T, std::string>, int> = 0>
     void addIntersectionData(const std::string& s, const T& val) {
-        if (m_isCollecting && m_currentDepthIdx >= 0)
+        if (m_isCollecting && m_currentDepthIdx != -1U)
             m_paths.at(m_currentSampleIdx).intersectionAt(m_currentDepthIdx).add(s, val);
     }
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
     void addIntersectionData(const std::string& s, const T& val1, const T& val2) {
-        if (m_isCollecting && m_currentDepthIdx >= 0)
+        if (m_isCollecting && m_currentDepthIdx != -1U)
             m_paths.at(m_currentSampleIdx).intersectionAt(m_currentDepthIdx).add(s, val1, val2);
     }
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
     void addIntersectionData(const std::string& s, const T& val1, const T& val2, const T& val3) {
-        if (m_isCollecting && m_currentDepthIdx >= 0)
+        if (m_isCollecting && m_currentDepthIdx != -1U)
             m_paths.at(m_currentSampleIdx).intersectionAt(m_currentDepthIdx).add(s, val1, val2, val3);
     }
 
     template <typename T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
     void addIntersectionData(const std::string& s, const T& val1, const T& val2, const T& val3, const T& val4) {
-        if (m_isCollecting && m_currentDepthIdx >= 0)
+        if (m_isCollecting && m_currentDepthIdx != -1U)
             m_paths.at(m_currentSampleIdx).intersectionAt(m_currentDepthIdx).add(s, val1, val2, val3, val4);
     }
 
@@ -122,19 +123,20 @@ public:
 
     class HeatmapApi {
     public:
-        void initialize(const std::vector<Mesh>& meshes, const std::vector<uint32_t>& subdivision_budgets);
-        void enable() { is_collecting = !finalized && !m_data.empty(); }
+        void initialize(const std::vector<Mesh>& meshes, uint32_t subdivision_budget=(1<<23));
+        void reset();
+        void enable() { if (finalized) reset(); is_collecting = true; }
         void disable() { is_collecting = false; }
         bool isCollecting() const { return is_collecting; }
 
-        void addSample(uint32_t mesh_id, const Point3f& p, uint32_t face_id, const Color3f& value, float weight=1.0f);
+        void addSample(uint32_t mesh_id, const Point3f& p, uint32_t face_id, const Color4f& value, float weight=1.0f);
 
         /// small preprocessing step that propagates values to children of subdivided faces
         /// also replaces RGB values by sample density if requested
         void finalize();
 
         bool hasData() const { return finalized; }
-        const std::vector<HeatmapData>& getHeatmapData() { if (!finalized) throw std::logic_error("finalize the data first"); return m_data; }
+        const std::vector<HeatmapData>& getHeatmapData() { if (!finalized) throw std::logic_error("finalize the data first"); return heatmap_data; }
 
         // display options for the visualization client
         std::string label    {"unknown"};
@@ -145,9 +147,10 @@ public:
         bool density_mode    {false};
 
     private:
-        std::vector<HeatmapData> m_data;
         bool is_collecting {false};
         bool finalized     {false};
+
+        std::vector<HeatmapData> heatmap_data;
 
         /// debug function which exports the heatmap of a single mesh into a ply file
         void exportPLY(const std::string& filename, uint32_t shape_id, bool ascii_mode=true) const;
@@ -155,19 +158,11 @@ public:
 
     void clear() { m_paths.clear(); }
 
-    void setMeshData(std::vector<Mesh>&& mesh_data) { m_meshes.swap(mesh_data); }
-    const std::vector<Mesh>& getMeshData() const { return m_meshes; }
-
-    void setCamera(const Camera& camera) { m_camera = camera; }
-    const Camera& getCamera() const { return m_camera; }
-
 protected:
-    Camera m_camera;
-    std::vector<Mesh> m_meshes;
-
     std::vector<PathData> m_paths;
-    int32_t m_currentSampleIdx {-1};
-    int32_t m_currentDepthIdx  {-1};
+
+    uint32_t m_currentSampleIdx {-1U};
+    uint32_t m_currentDepthIdx  {-1U};
     bool m_isCollecting        {false};
 };
 

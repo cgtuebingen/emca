@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +23,12 @@
     SOFTWARE.
 """
 
-from core.items_tree_node import PathNodeItem
-from core.items_tree_node import IntersectionNodeItem
-from core.color3 import Color3f
+from core.color import Color4f
 
 from core.pyside2_uic import loadUi
 from PySide2.QtWidgets import QWidget
 from PySide2.QtWidgets import QTreeWidgetItem
-from PySide2.QtCore import QItemSelectionModel, Slot
+from PySide2.QtCore import Slot
 from PySide2.QtGui import QPixmap
 from PySide2.QtGui import QColor
 from PySide2.QtGui import QIcon
@@ -37,18 +36,76 @@ from PySide2.QtWidgets import QAbstractItemView
 import numpy as np
 import os
 
+from model.pixel_data import PixelData
 
-class ViewRenderData(QWidget):
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
+
+class PathNodeItem(QTreeWidgetItem):
 
     """
-        ViewRenderData
-        Handles the view of the Render data containing all information about the selected pixel and its traced paths.
+        PathNodeItem
+        Represents a Path Node within the tree view of the View Render Data
+        Holds the path index if this item is selected.
+        Necessary to know which path item is selected by the user.
+    """
+
+    def __init__(self, index : int):
+        QTreeWidgetItem.__init__(self)
+        self._path_index = index
+
+    @property
+    def path_index(self) -> int:
+        """
+        Returns the node index representing the path index
+        """
+        return self._path_index
+
+
+class IntersectionNodeItem(QTreeWidgetItem):
+
+    """
+        IntersectionNodeItem
+        Represents a IntersectionNode within the tree view of the View Render Data
+        Holds information about the parent index and the intersection index.
+        Necessary to know which intersection and path item is selected by the user.
+    """
+
+    def __init__(self, path_index : int, intersection_index : int):
+        QTreeWidgetItem.__init__(self)
+
+        self._path_index = path_index
+        self._intersection_index = intersection_index
+
+    @property
+    def path_index(self) -> int:
+        """
+        Returns the index of the parent, representing the path index
+        """
+        return self._path_index
+
+    @property
+    def intersection_index(self) -> int:
+        """
+        Returns the intersection index
+        """
+        return self._intersection_index
+
+
+class ViewPixelData(QWidget):
+
+    """
+        ViewPixelData
+        Handles the view of the pixel data containing all information about the selected pixel and its traced paths.
         Moreover, all user added data will be visualized here as tree structure.
     """
 
     def __init__(self, parent=None):
         QWidget.__init__(self, parent=parent)
-        ui_filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ui', 'render_data.ui'))
+        ui_filepath = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'ui', 'pixel_data.ui'))
         loadUi(ui_filepath, self)
 
         self.tree.setHeaderLabels(["Item", "Value"])
@@ -63,7 +120,7 @@ class ViewRenderData(QWidget):
         self.btnInspect.clicked.connect(self.inspect_selected_paths)
         self.cbExpand.toggled.connect(self.expand_items)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
         :param controller: Controller
@@ -71,21 +128,18 @@ class ViewRenderData(QWidget):
         """
         self._controller = controller
 
-    def enable_view(self, enabled):
+    def enable_view(self, enabled : bool):
         self.btnShowAll.setEnabled(enabled)
         self.btnInspect.setEnabled(enabled)
         self.cbExpand.setEnabled(enabled)
 
-    def show_path_data(self, indices, render_data):
+    def show_path_data(self, indices : np.ndarray, pixel_data : PixelData):
         """
         Load path render data depending on indices input
-        :param indices: np.array([])
-        :param render_data: RenderData
-        :return:
         """
         self.tree.clear()
         for i in indices:
-            self.add_path_data_node(render_data.dict_paths[i])
+            self.add_path_data_node(pixel_data.dict_paths[i])
         self.expand_items(self.cbExpand.isChecked())
 
     @Slot(bool, name='show_all_traced_paths')
@@ -115,7 +169,7 @@ class ViewRenderData(QWidget):
         item = self.tree.selectedItems()[0]
 
         if isinstance(item, PathNodeItem):
-            self._controller.select_path(item.index)
+            self._controller.select_path(item.path_index)
         elif isinstance(item, IntersectionNodeItem):
             self._controller.select_intersection(item.path_index, item.intersection_index)
 
@@ -132,9 +186,7 @@ class ViewRenderData(QWidget):
         indices = []
 
         for item in items:
-            if isinstance(item, PathNodeItem):
-                indices.append(item.index)
-            elif isinstance(item, IntersectionNodeItem):
+            if isinstance(item, PathNodeItem) or isinstance(item, IntersectionNodeItem):
                 indices.append(item.path_index)
 
         indices = np.unique(np.array(indices, dtype=np.int32))
@@ -162,7 +214,7 @@ class ViewRenderData(QWidget):
         for i in range(0, self.tree.topLevelItemCount()):
             item = self.tree.topLevelItem(i)
             if isinstance(item, PathNodeItem):
-                if item.index == index:
+                if item.path_index == index:
                     self.tree.setCurrentItem(item)
                     break
         self.tree.blockSignals(False)
@@ -175,7 +227,7 @@ class ViewRenderData(QWidget):
         for i in range(0, self.tree.topLevelItemCount()):
             item = self.tree.topLevelItem(i)
             if isinstance(item, PathNodeItem):
-                if item.index == path_idx:
+                if item.path_index == path_idx:
                     for j in range(0, item.childCount()):
                         item_child = item.child(j)
                         if isinstance(item_child, IntersectionNodeItem):
@@ -231,7 +283,7 @@ class ViewRenderData(QWidget):
         :param its: Intersection
         :return:
         """
-        its_node = IntersectionNodeItem(parent.index, its.depth_idx)
+        its_node = IntersectionNodeItem(parent.path_index, its.depth_idx)
         its_node.setText(0, "Intersection ({})".format(its.depth_idx))
         if its.pos is not None:
             self.add_child_item_node(its_node, "Position", str(its.pos))
@@ -267,7 +319,7 @@ class ViewRenderData(QWidget):
         """
         # insert general data
         for key, value in user_data.data.items():
-            if isinstance(value, Color3f):
+            if isinstance(value, Color4f):
                 [r,g,b] = value.to_list_srgb()
                 color = QColor(r, g, b)
                 self.add_child_item_node(node, str(key), str(value), color)
@@ -294,9 +346,8 @@ class ViewRenderData(QWidget):
             item.setIcon(1, icon)
         parent.addChild(item)
 
-    def prepare_new_data(self):
+    def clear(self):
         """
         Prepare new data for new incoming data, clears the tree view.
-        :return:
         """
         self.tree.clear()

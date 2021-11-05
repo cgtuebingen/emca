@@ -1,7 +1,8 @@
 /*
-	EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
-	comes with an Apache License 2.0
-	(c) Christoph Kreisl 2020
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
+    comes with an Apache License 2.0
+    (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
 	Licensed to the Apache Software Foundation (ASF) under one
 	or more contributor license agreements.  See the NOTICE file
@@ -30,7 +31,7 @@ EMCA_NAMESPACE_BEGIN
 void UserData::serialize(Stream *stream) const
 {
     // write number of elements
-    stream->writeUInt(m_data.size());
+    stream->writeUInt(static_cast<uint32_t>(m_data.size()));
     for (const auto& d: m_data) {
         stream->writeString(d.first);
 
@@ -110,13 +111,13 @@ void IntersectionData::setNextEventEstimationPos(Point3f pos, bool visible)
     m_visibleNE = visible;
 }
 
-void IntersectionData::setIntersectionEstimate(Color3f li)
+void IntersectionData::setIntersectionEstimate(Color4f li)
 {
     m_hasEstimate = true;
     m_estimate = li;
 }
 
-void IntersectionData::setIntersectionEmission(Color3f le)
+void IntersectionData::setIntersectionEmission(Color4f le)
 {
     m_hasEmission = true;
     m_emission = le;
@@ -126,7 +127,7 @@ void IntersectionData::serialize(Stream *stream) const
 {
     UserData::serialize(stream);
 
-    stream->writeInt(m_depthIdx);
+    stream->writeUInt(m_depthIdx);
 
     stream->writeBool(m_hasPos);
     if (m_hasPos)
@@ -148,9 +149,9 @@ void IntersectionData::serialize(Stream *stream) const
         m_emission.serialize(stream);
 }
 
-void PathData::setDepthIdx(int32_t depthIdx)
+void PathData::setDepthIdx(uint32_t depthIdx)
 {
-    if (depthIdx >= static_cast<int32_t>(m_intersections.size())) {
+    if (depthIdx >= m_intersections.size()) {
         m_intersections.resize(depthIdx+1);
         m_pathDepth = depthIdx;
     }
@@ -167,12 +168,12 @@ void PathData::setNextEventEstimationPos(uint32_t depthIdx, Point3f pos, bool oc
     m_intersections.at(depthIdx).setNextEventEstimationPos(pos, occluded);
 }
 
-void PathData::setIntersectionEstimate(uint32_t depthIdx, Color3f li)
+void PathData::setIntersectionEstimate(uint32_t depthIdx, Color4f li)
 {
     m_intersections.at(depthIdx).setIntersectionEstimate(li);
 }
 
-void PathData::setIntersectionEmission(uint32_t depthIdx, Color3f le)
+void PathData::setIntersectionEmission(uint32_t depthIdx, Color4f le)
 {
     m_intersections.at(depthIdx).setIntersectionEmission(le);
 }
@@ -182,7 +183,7 @@ void PathData::setPathOrigin(Point3f origin)
     m_pathOrigin = origin;
 }
 
-void PathData::setFinalEstimate(Color3f li)
+void PathData::setFinalEstimate(Color4f li)
 {
     m_hasFinalEstimate = true;
     m_finalEstimate = li;
@@ -192,8 +193,8 @@ void PathData::serialize(Stream *stream) const
 {
     UserData::serialize(stream);
 
-    stream->writeInt(m_sampleIdx);
-    stream->writeInt(m_pathDepth);
+    stream->writeUInt(m_sampleIdx);
+    stream->writeUInt(m_pathDepth);
 
     m_pathOrigin.serialize(stream);
 
@@ -201,11 +202,11 @@ void PathData::serialize(Stream *stream) const
     if (m_hasFinalEstimate)
         m_finalEstimate.serialize(stream);
 
-    uint32_t num_intersections = static_cast<uint32_t>(std::count_if(m_intersections.begin(), m_intersections.end(), [](const auto& segment) -> bool { return segment.m_depthIdx >= 0; }));
+    uint32_t num_intersections = static_cast<uint32_t>(std::count_if(m_intersections.begin(), m_intersections.end(), [](const IntersectionData& segment) -> bool { return segment.m_depthIdx != -1U; }));
     stream->writeUInt(num_intersections);
     for (const auto& intersections : m_intersections)
     {
-        if (intersections.m_depthIdx >= 0)
+        if (intersections.m_depthIdx != -1U)
             intersections.serialize(stream);
     }
 }

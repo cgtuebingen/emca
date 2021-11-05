@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +30,12 @@ from PySide2.QtWidgets import QApplication
 import os
 import logging
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
+
 
 class ViewDetectorSettings(QWidget):
 
@@ -55,7 +62,7 @@ class ViewDetectorSettings(QWidget):
         self.btn_apply.clicked.connect(self.apply)
         self.btn_apply_close.clicked.connect(self.apply_close)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
         :param controller: Controller

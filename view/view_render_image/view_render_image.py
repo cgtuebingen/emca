@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +23,21 @@
     SOFTWARE.
 """
 
+import typing
 from view.view_render_image.hdr_graphics_view import HDRGraphicsView
 from PySide2.QtWidgets import QWidget
-from PySide2.QtCore import Slot
+from PySide2.QtCore import QPoint, Slot
 from PySide2.QtCore import Qt
 from core.pyside2_uic import loadUi
 import math
 import os
 import logging
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class ViewRenderImage(QWidget):
@@ -63,24 +71,14 @@ class ViewRenderImage(QWidget):
         self.dsbExposure.valueChanged.connect(self.set_slider_value)
         self.cbFalsecolor.stateChanged.connect(self.set_falsecolor_value)
 
-    @property
-    def pixmap(self):
-        """
-        Returns the render image as QPixmap
-        :return:
-        """
-        return self._graphics_view.pixmap
-
     @Slot(int, name='set_falsecolor_value')
-    def set_falsecolor_value(self, value):
+    def set_falsecolor_value(self, value : int):
         """
         Toggles falsecolor display of the image
-        :param value: int
-        :return:
         """
         self._graphics_view.set_falsecolor(value != int(Qt.CheckState.Unchecked))
 
-    def set_plusminus(self, value):
+    def set_plusminus(self, value : bool):
         """
         Toggles plusminus display of the image
         :param value: boolean
@@ -88,7 +86,7 @@ class ViewRenderImage(QWidget):
         """
         self._graphics_view.set_plusminus(value)
 
-    def set_show_ref(self, value):
+    def set_show_ref(self, value : bool):
         """
         Toggles display of the reference image
         :param value: boolean
@@ -97,11 +95,9 @@ class ViewRenderImage(QWidget):
         self._graphics_view.set_show_ref(value)
 
     @Slot(float, name='set_slider_value')
-    def set_slider_value(self, value):
+    def set_slider_value(self, value : float):
         """
         Sets the slider value of the exposure
-        :param value: float
-        :return:
         """
         # code from HDRiTools qt4Image
         len_slider = self.hsExposure.maximum() - self.hsExposure.minimum()
@@ -112,11 +108,9 @@ class ViewRenderImage(QWidget):
         self.update_exposure(float(value))
 
     @Slot(int, name='set_spin_value')
-    def set_spin_value(self, value):
+    def set_spin_value(self, value : int):
         """
         Sets the spin value of the exposure
-        :param value: float
-        :return:
         """
         # code from HDRiTools qt4Image
         len_slider = self.hsExposure.maximum() - self.hsExposure.minimum()
@@ -125,53 +119,41 @@ class ViewRenderImage(QWidget):
         new_value = (ratio * len_spin) + self.dsbExposure.minimum()
         self.dsbExposure.setValue(new_value)
 
-    def update_exposure(self, value):
+    def update_exposure(self, value : float):
         """
         Updates the exposure of the image
-        :param value: float
-        :return:
         """
         if value != self._value:
             self._value = value
             self._graphics_view.update_exposure(value)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
-        :param controller: Controller
-        :return:
         """
         self._controller = controller
         self.btnLoadImage.clicked.connect(controller.options.load_image_dialog)
         self.btnLoadReference.clicked.connect(controller.options.load_reference_dialog)
 
-    def enable_view(self, enable):
+    def enable_view(self, enable : bool):
         """
         Enables the view elements
-        :param enable: boolean
-        :return:
         """
         self.btnReset.setEnabled(enable)
         self.dsbExposure.setEnabled(enable)
         self.hsExposure.setEnabled(enable)
 
-    def request_render_data(self, pixel):
+    def request_pixel_data(self, pixel : QPoint):
         """
         Informs the controller about the selected pixel
-        :param pixel: tuple(x,y)
-        :return:
         """
-        self._controller.stream.request_render_data(pixel=pixel)
+        self._controller.stream.request_render_pixel(pixel)
 
-    def load_hdr_image(self, filepath, is_reference=False):
+    def load_hdr_image(self, filepath : typing.Union[str, bytes], is_reference : bool = False):
         """
         Loads an exr image from the given filepath
-        :param filepath: string
-        :return:
         """
-        success = self._graphics_view.load_hdr_image(filepath, is_reference)
-        self._graphics_view.reset()
-        return success
+        return self._graphics_view.load_hdr_image(filepath, is_reference)
 
     def save_last_rendered_image_filepath(self):
         hdr_image = self._graphics_view.hdr_image

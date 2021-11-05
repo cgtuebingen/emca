@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +27,10 @@ import numpy as np
 
 from core.plugin import Plugin
 
-from core.point2 import Point2f
-from core.color3 import Color3f
+from core.point import Point2f
+from core.color import Color4f
 
-from model.render_data import RenderData
-from model.path_data import PathData
-from model.intersection_data import IntersectionData
+from model.pixel_data import PixelData
 
 from core.pyside2_uic import loadUi
 from PySide2.QtWidgets import QVBoxLayout
@@ -75,7 +74,7 @@ class IntersectionData(Plugin):
         self._plots = [self._its_data_plot_2d,
                        self._its_data_plot_3d,
                        self._its_data_plot_rgb]
-        self._render_data = None
+        self._pixel_data = None
         self._cur_its_idx = None
         self._last_plot_item = None
 
@@ -104,8 +103,8 @@ class IntersectionData(Plugin):
         for plot in self._plots:
             plot.apply_theme(theme)
 
-    def init_render_data(self, render_data : RenderData):
-        self._render_data = render_data
+    def init_pixel_data(self, pixel_data : PixelData):
+        self._pixel_data = pixel_data
 
     def prepare_new_data(self):
         self._cur_its_idx = None
@@ -145,7 +144,7 @@ class IntersectionData(Plugin):
         self.listPaths.setCurrentItem(item)
         self.listPaths.blockSignals(False)
 
-        paths = self._render_data.dict_paths
+        paths = self._pixel_data.dict_paths
         path_data = paths.get(item.idx, None)
 
         if path_data:
@@ -157,7 +156,7 @@ class IntersectionData(Plugin):
 
                         if isinstance(value, Point2f):
                             plot_type = '3d'
-                        elif isinstance(value, Color3f):
+                        elif isinstance(value, Color4f):
                             plot_type = 'rgb'
                         elif np.shape(value) == () or np.shape(value) == (1,):
                             plot_type = '2d'
@@ -177,7 +176,7 @@ class IntersectionData(Plugin):
                         plot_data_dict[key] = {'its':[],'value':[],'type':plot_type}
                     plot_data_dict[key]['its'].append(its_idx)
                     plot_data_dict[key]['value'].append(its.li)
-                
+
                 # Add a plot of the emission (if available)
                 if its.le is not None:
                     key = 'Emission'
@@ -216,7 +215,7 @@ class IntersectionData(Plugin):
                     self.listPlotNames.setCurrentRow(0)
 
     def select_intersection(self, path_idx, its_idx):
-        if self._render_data:
+        if self._pixel_data:
             self._cur_its_idx = its_idx
             stacked_idx = self.stackedHists.currentIndex()
             if stacked_idx == 0:

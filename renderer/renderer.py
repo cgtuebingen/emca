@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,7 @@
     SOFTWARE.
 """
 
-from core.point3 import Point3f
+from core.point import Point3f
 import numpy as np
 from renderer.rubberband import RubberBandInteractor
 from renderer.path import Path

@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +23,7 @@
     SOFTWARE.
 """
 
+import numpy as np
 from PySide2.QtWidgets import QWidget
 from PySide2.QtWidgets import QPushButton
 from PySide2.QtWidgets import QVBoxLayout
@@ -29,6 +31,19 @@ from PySide2.QtWidgets import QHBoxLayout
 from PySide2.QtWidgets import QFrame
 from PySide2.QtCore import Slot
 import logging
+import typing
+from core.plugin import Plugin
+
+from model.pixel_data import PixelData
+
+from typing import TYPE_CHECKING
+
+from renderer.scene_renderer import SceneRenderer
+from stream.stream import Stream
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class PluginsViewContainer(QWidget):
@@ -40,7 +55,7 @@ class PluginsViewContainer(QWidget):
         Besides holds the Plugin button which is used to open the Plugin view.
     """
 
-    def __init__(self, plugin):
+    def __init__(self, plugin : Plugin):
         QWidget.__init__(self)
 
         self.setWindowTitle("Plugin {}".format(plugin.name))
@@ -75,49 +90,41 @@ class PluginsViewContainer(QWidget):
         layout.addLayout(btn_layout)
 
     @property
-    def plugin(self):
+    def plugin(self) -> Plugin:
         """
         Returns the Plugin
-        :return:
         """
         return self._plugin
 
-    def send_update_path_indices(self, indices, add_item):
+    def send_update_path_indices(self, path_indices : np.ndarray, add_item : bool):
         """
         Calls the controller update_path function.
         Update the path indices of all views
-        :param indices: np.array[(path_index,...)]
-        :param add_item: true or false
-        :return:
         """
-        self._controller.update_path(indices, add_item)
+        self._controller.update_path(path_indices, add_item)
 
-    def send_select_path(self, index):
+    def send_select_path(self, path_idx : typing.Optional[int]):
         """
         Calls the controller select_path function.
         Updates the current selected path
-        :param index: path_index
-        :return:
         """
-        self._controller.select_path(index)
+        self._controller.select_path(path_idx)
 
-    def send_select_intersection(self, path_idx, its_idx):
+    def send_select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         """
         Calls the controller select_intersection function.
         Updates the current selected intersection
         """
         self._controller.select_intersection(path_idx, its_idx)
 
-    def select_path(self, index):
+    def select_path(self, path_idx : typing.Optional[int]):
         """
         Calls the Plugin select_path function
         Informs the Plugin about the current selected path
-        :param index: path_index
-        :return:
         """
-        self._plugin.select_path(index)
+        self._plugin.select_path(path_idx)
 
-    def select_intersection(self, path_idx, its_idx):
+    def select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         """
         Calls the Plugin select_intersection function.
         Informs the Plugin about the current selected intersection
@@ -127,57 +134,46 @@ class PluginsViewContainer(QWidget):
         if self.isVisible():
             self._controller.stream.request_plugin(self._plugin.flag)
 
-    def serialize(self, stream):
+    def serialize(self, stream : Stream):
         """
         Calls the Plugin serialize function.
         Data from the Plugin will be send to the server.
-        :param stream:
-        :return:
         """
         self._plugin.serialize(stream)
 
-    def get_plugin_btn(self):
+    def get_plugin_btn(self) -> QPushButton:
         """
         Returns the Plugin QButton
         Used to visualize Plugin button with name within view
-        :return:
         """
         return self._btn
 
-    def enable_plugin_btn(self, enable):
+    def enable_plugin_btn(self, enable : bool):
         """
         Enables or disables the Plugin button
-        :param enable: true or false
-        :return:
         """
         self._btn.setEnabled(enable)
         self._btn_request.setEnabled(enable)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Set the controller
-        :param controller:
-        :return:
         """
         self._controller = controller
 
-    def set_scene_renderer(self, scene_renderer):
+    def set_scene_renderer(self, scene_renderer : SceneRenderer):
         """
         Set the renderer
-        :param: renderer
-        :return:
         """
         self._plugin.scene_renderer = scene_renderer
 
-    def init_render_data(self, render_data):
+    def init_pixel_data(self, pixel_data : PixelData):
         """
-        Calls the Plugin init_render_data function.
+        Calls the Plugin init_pixel_data function.
         Render data will be set within Plugins,
         to provide them with the current render data set from the selected pixel
-        :param render_data:
-        :return:
         """
-        self._plugin.init_render_data(render_data)
+        self._plugin.init_pixel_data(pixel_data)
 
     def prepare_new_data(self):
         """
@@ -187,7 +183,7 @@ class PluginsViewContainer(QWidget):
         """
         self._plugin.prepare_new_data()
 
-    def update_path_indices(self, indices):
+    def update_path_indices(self, indices : np.ndarray):
         """
         Calls the Plugin update_path_indices function.
         Informs the Plugin about all selected paths
@@ -200,29 +196,24 @@ class PluginsViewContainer(QWidget):
         """
         Calls the Plugin update_view function.
         This function is called after the deserialize function of the Plugin is finished
-        :return:
         """
         self._plugin.update_view()
 
     @Slot(bool, name='request_plugin')
-    def request_plugin(self, clicked):
+    def request_plugin(self, clicked : bool):
         """
         Calls the controller request_tool function.
         If the Request button within the tool view is clicked,
         a request with the tool_id will be send to the server.
-        :param clicked:
-        :return:
         """
         self._controller.stream.request_plugin(self._plugin.flag)
 
     @Slot(bool, name='display_tool')
-    def display_plugin(self, clicked):
+    def display_plugin(self, clicked : bool):
         """
         Opens and displays the tool window,
         if the view is already opened but in not active in the background,
         this functions sets the tool window back active and brings it to the foreground.
-        :param clicked:
-        :return:
         """
         if self.isVisible():
             self.activateWindow()

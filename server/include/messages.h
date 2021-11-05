@@ -1,7 +1,8 @@
 /*
-    EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
     comes with an Apache License 2.0
     (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file

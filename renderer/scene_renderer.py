@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +24,8 @@
 """
 
 import typing
-from model.render_data import RenderData
+from model.camera_data import CameraData
+from model.pixel_data import PixelData
 from renderer.path import Path
 from typing import Union
 from renderer.camera import Camera
@@ -38,6 +40,12 @@ import logging
 
 import matplotlib.pyplot as plt
 import vtk
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class SceneRenderer(object):
@@ -72,7 +80,7 @@ class SceneRenderer(object):
         self._colorbar.SetTextPositionToPrecedeScalarBar()
         self._colorbar.SetLookupTable(self._lut)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         self._controller = controller
 
         self.reset_path_options()
@@ -114,11 +122,11 @@ class SceneRenderer(object):
             'enabled': has_face_colors,
             'colorbar': has_face_colors
         }
-    
+
     @property
     def path_options(self) -> typing.Dict[str, typing.Any]:
         return self._path_options
-    
+
     @path_options.setter
     def path_options(self, options : typing.Dict[str, typing.Any]):
         updated = dict(self._path_options, **options)
@@ -140,7 +148,7 @@ class SceneRenderer(object):
             self.update_scene_display()
             if self._controller is not None:
                 self._controller.scene.update_scene_options(updated)
-    
+
     @property
     def heatmap_options(self) -> typing.Dict[str, typing.Any]:
         return self._heatmap_options
@@ -171,14 +179,14 @@ class SceneRenderer(object):
     def update_scene_display(self):
         for mesh in self._meshes:
             mesh.opacity = self._scene_options.get('opacity', 0.25)
-        
+
         self._camera.motion_speed = self._scene_options.get('camera_speed', 0.25)
         self.start_widget_update_timer()
 
     def update_heatmap_display(self):
         for mesh in self._meshes:
             mesh.mapper.SetScalarVisibility(self._heatmap_options.get('enabled', True))
-        
+
         # fetch colormap from matplotlib and feed it into vtk
         cmap = plt.get_cmap(self._heatmap_options.get('cmap', 'plasma')) # RdBu
         self._cmap_data = np.array(cmap(np.linspace(0.0, 1.0, 256))*255.0, dtype=np.uint8)
@@ -198,7 +206,7 @@ class SceneRenderer(object):
             self._renderer.AddActor(self._colorbar)
         else:
             self._renderer.RemoveActor(self._colorbar)
-        
+
         self.start_widget_update_timer()
 
     @property
@@ -216,10 +224,10 @@ class SceneRenderer(object):
         return self._paths
 
     @property
-    def active_path_index(self):
+    def active_path_index(self) -> typing.Optional[int]:
         return self._active_path_index
 
-    def rubber_band_selection(self, path_indices, selected_point):
+    def rubber_band_selection(self, path_indices : np.ndarray, selected_point):
         self._controller.update_path(path_indices, False)
 
         # when only one path is selected, the intersected 3d point is given as the second parameter
@@ -243,16 +251,19 @@ class SceneRenderer(object):
             self._widget_update_timer.start()
 
     def widget_update_from_timer(self):
+        # the clipping ranges from the path tracer are not necessarily ideal for a rasterizer
+        # re-compute clipping range from scene geometry
+        self._renderer.ResetCameraClippingRange()
         self._renderer.widget.update()
         self._widget_update_timer_running = False
 
-    def update_path_indices(self, indices):
+    def update_path_indices(self, indices : np.ndarray):
         for path in self._paths.values():
             path.visible = path.path_idx in indices
 
         self.start_widget_update_timer()
 
-    def select_path(self, index):
+    def select_path(self, index : typing.Optional[int]):
         # select no intersection (deselects previous path's intersection)
         if self._active_path_index is not None:
             self._paths[self._active_path_index].select_intersection(None)
@@ -260,10 +271,10 @@ class SceneRenderer(object):
         self._active_path_index = index
         self.update_path_display()
 
-    def select_intersection(self, path_idx, its_idx):
+    def select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         if self._active_path_index is not None:
             self._paths[self._active_path_index].select_intersection(None)
-        
+
         self._active_path_index = path_idx
 
         if path_idx is not None:
@@ -277,7 +288,7 @@ class SceneRenderer(object):
                     self._camera.set_focal_point(intersection.pos)
         self.start_widget_update_timer()
 
-    def load_camera(self, camera_data):
+    def load_camera(self, camera_data : CameraData):
         self._camera.load_settings(camera_data)
         self._renderer.SetActiveCamera(self._camera)
         self.start_widget_update_timer()
@@ -325,14 +336,14 @@ class SceneRenderer(object):
                 'label': scene_info['colorbar_label']
             }
 
-    def load_traced_paths(self, render_data : RenderData):
+    def load_traced_paths(self, pixel_data : PixelData):
         self.clear_traced_paths()
         #start = time.time()
-        for key, path_data in render_data.dict_paths.items():
+        for key, path_data in pixel_data.dict_paths.items():
             path = Path(key, path_data)
             self._paths[key] = path
             self._renderer.AddActor(path)
-        
+
         #logging.info("creating traced paths runtime: {}s".format(time.time() - start))
         self.update_path_display()
 
@@ -351,6 +362,3 @@ class SceneRenderer(object):
     def reset_camera_position(self):
         self._camera.reset()
         self.start_widget_update_timer()
-
-    def prepare_new_data(self):
-        self.clear_traced_paths()

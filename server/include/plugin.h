@@ -1,7 +1,8 @@
 /*
-    EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
     comes with an Apache License 2.0
     (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -31,7 +32,6 @@ EMCA_NAMESPACE_BEGIN
 
 class Plugin {
 public:
-
     Plugin(std::string name, short id) : m_name(name), m_id(id) { }
     virtual ~Plugin() = default;
 
@@ -39,12 +39,12 @@ public:
     virtual void serialize(Stream *stream) const = 0;
     virtual void deserialize(Stream *stream) = 0;
 
-    inline std::string getName() const { return m_name; }
-    inline short getId() const { return m_id; }
+    const std::string& getName() const { return m_name; }
+    int16_t getId() const { return m_id; }
 
 private:
     std::string m_name;
-    short m_id;
+    int16_t m_id;
 };
 
 EMCA_NAMESPACE_END

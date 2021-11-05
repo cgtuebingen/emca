@@ -1,7 +1,8 @@
 /*
-    EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
     comes with an Apache License 2.0
     (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -39,6 +40,10 @@ EMCAServer::EMCAServer(RenderInterface* renderer, DataApi* dataApi)
     : m_renderer{renderer}, m_dataApi{dataApi} {
     if (!renderer || !dataApi)
         throw std::logic_error("a renderer and a data api instance need to be provided");
+
+    // FIXME: is there a better place to put this? it is a bit hidden here.
+    m_mesh_data = m_renderer->getMeshData();
+    m_dataApi->heatmap.initialize(m_mesh_data);
 }
 
 void EMCAServer::run(uint16_t port) {
@@ -66,7 +71,7 @@ void EMCAServer::run(uint16_t port) {
         throw std::runtime_error("failed to bind server to port "+std::to_string(port));
     }
 
-    short lastReceivedMsg = Message::EMCA_DISCONNECT;
+    int16_t lastReceivedMsg = Message::EMCA_DISCONNECT;
 
     while (m_serverSocket >= 0 && lastReceivedMsg == Message::EMCA_DISCONNECT) {
         disconnect();
@@ -177,10 +182,9 @@ void EMCAServer::respondSupportedPlugins() {
     {
         std::cout << "Inform Client about supported Plugins" << std::endl;
         m_dataApi->plugins.printPlugins();
-        std::vector<short> supportedPlugins = m_dataApi->plugins.getPluginIds();
-        uint32_t msgLen = supportedPlugins.size();
+        std::vector<int16_t> supportedPlugins = m_dataApi->plugins.getPluginIds();
         m_stream->writeShort(Message::EMCA_SUPPORTED_PLUGINS);
-        m_stream->writeUInt(msgLen);
+        m_stream->writeUInt(static_cast<uint32_t>(supportedPlugins.size()));
         for (short &id : supportedPlugins) {
             m_stream->writeShort(id);
         }
@@ -209,9 +213,10 @@ void EMCAServer::respondRenderImage() {
 
         // enabling the heatmap is up to the preprocessing step during rendering
         m_renderer->renderImage();
-        // make sure that the heatmap is disabled after rendering and finalize its data
-        m_dataApi->heatmap.disable();
-        m_dataApi->heatmap.finalize();
+        // finalize heatmap data (if there is any)
+        if (m_dataApi->heatmap.isCollecting()) {
+            m_dataApi->heatmap.finalize();
+        }
 
         m_stream->writeShort(Message::EMCA_RESPONSE_RENDER_IMAGE);
         //TODO: pass through the rendered exr image if the connection is remote
@@ -229,7 +234,7 @@ void EMCAServer::respondCameraData() {
     try {
         std::cout << "Send Camera Information ... " << std::flush;
         m_stream->writeShort(Message::EMCA_RESPONSE_CAMERA);
-        m_dataApi->getCamera().serialize(m_stream.get());
+        m_renderer->getCameraData().serialize(m_stream.get());
         std::cout << "done" << std::endl;
     } catch (std::exception &e) {
         std::cerr << "Camera data error: " << e.what() << std::endl;
@@ -249,7 +254,7 @@ void EMCAServer::respondSceneData() {
             m_stream->writeString(m_dataApi->heatmap.label);
 
             const auto& heatmap_data = m_dataApi->heatmap.getHeatmapData();
-            m_stream->writeUInt(heatmap_data.size());
+            m_stream->writeUInt(static_cast<uint32_t>(heatmap_data.size()));
             std::cout << "Send Heatmap Information ... " << std::flush;
             for (const auto& heatmap : heatmap_data) {
                 heatmap.serialize(m_stream.get());
@@ -257,9 +262,8 @@ void EMCAServer::respondSceneData() {
         }
         else {
             std::cout << "Send Mesh Information ... " << std::flush;
-            const auto& mesh_data = m_dataApi->getMeshData();
-            m_stream->writeUInt(mesh_data.size());
-            for (const auto& mesh : mesh_data) {
+            m_stream->writeUInt(static_cast<uint32_t>(m_mesh_data.size()));
+            for (const auto& mesh : m_mesh_data) {
                 // send mesh to client
                 mesh.serialize(m_stream.get());
             }

@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +25,8 @@
 
 import typing
 import numpy as np
-from model.render_data import RenderData
+from model.pixel_data import PixelData
+from renderer.scene_renderer import SceneRenderer
 from stream.stream import Stream
 from core.plugin import PluginType
 from plugins.plugins_view_container import PluginsViewContainer
@@ -57,7 +59,7 @@ class PluginsHandler(object):
         for _, value in self._plugins_view_container.items():
             value.set_controller(controller)
 
-    def set_scene_renderer(self, renderer):
+    def set_scene_renderer(self, renderer : SceneRenderer):
         """
         Sets the renderer reference to all registered plugins
         """
@@ -93,13 +95,13 @@ class PluginsHandler(object):
         if plugins_view_container:
             plugins_view_container.serialize(stream)
 
-    def init_data(self, render_data : RenderData):
+    def init_data(self, pixel_data : PixelData):
         """
-        Calls Tool Container init_render_data function.
+        Calls Tool Container init_pixel_data function.
         All plugins will be informed about a new render data package
         """
         for _, value in self._plugins_view_container.items():
-            value.init_render_data(render_data)
+            value.init_pixel_data(pixel_data)
 
     def prepare_new_data(self):
         """

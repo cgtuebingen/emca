@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -32,20 +33,13 @@ class UserData(object):
         UserData
         Handles general data types which can be added by the user during the path tracing algorithm,
         in order to debug the system.
-        Supported data types boolean, float, double, integer, point2i, point2f, point3i, point3f, color3f and vectors
+        Supported data types boolean, float, double, integer, point2i, point2f, point3i, point3f, color4f and vectors
     """
 
-    def __init__(self):
+    def __init__(self, stream : Stream):
         # handle default data types
         self._data = {}
 
-    def deserialize(self, stream : Stream):
-        """
-        Deserialize UserData class from a socket stream
-        :param stream:
-        :return:
-        """
-        self.clear()
         num_items = stream.read_uint()
         for i in range(num_items):
             key = stream.read_string()
@@ -71,7 +65,7 @@ class UserData(object):
             elif type_identifier == '3f':
                 self._data[key] = stream.read_point3f()
             elif type_identifier == '4f':
-                self._data[key] = stream.read_color3f()
+                self._data[key] = stream.read_color4f()
             elif type_identifier == 's':
                 self._data[key] = stream.read_string()
             else:
@@ -83,9 +77,3 @@ class UserData(object):
         Returns a data dict with set information
         """
         return self._data
-
-    def clear(self):
-        """
-        Clears all data
-        """
-        self._data.clear()

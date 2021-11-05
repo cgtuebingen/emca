@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +25,10 @@
 
 import vtk
 import logging
+from core.point import Point3f
+from core.vector import Vec3f
+
+from model.camera_data import CameraData
 
 
 class Camera(vtk.vtkCamera):
@@ -35,29 +40,16 @@ class Camera(vtk.vtkCamera):
 
     def __init__(self):
         super().__init__()
-        # boolean to check if camera should always set the viewing direction to selected intersection
-        self._auto_clipping = True
-        self._motion_speed = 0.1
+        self._motion_speed = 0.1 # always between 0 and 1
+        self._scene_size   = 1.0 # estimate of scene size based on near and far clip
 
-        self._base_motion_speed = 1.0
-        self._origin = None
-        self._focal_point = None
-        self._focus_dist = None
-        self._up = None
-        self._near_clip = None
-        self._far_clip = None
-        self._fov = None
+        self._camera_data = None
 
-    def load_settings(self, camera_data):
+    def load_settings(self, camera_data : CameraData):
         # save parameters for camera reset
-        self._origin = camera_data.origin
-        self._base_motion_speed = (camera_data.far_clip-camera_data.near_clip)*0.05;
-        self._focal_point = camera_data.origin+camera_data.direction
-        self._up = camera_data.up
-        self._near_clip = camera_data.near_clip
-        self._far_clip = camera_data.far_clip
-        self._focus_dist = camera_data.focus_dist
-        self._fov = camera_data.fov
+        self._camera_data = camera_data
+        self._scene_size = (self._camera_data.far_clip-self._camera_data.near_clip)*0.05;
+
         self.reset()
 
     def reset(self):
@@ -65,125 +57,93 @@ class Camera(vtk.vtkCamera):
         Resets the camera to its default position
         :return:
         """
-        if self._origin is not None:
-            self.SetPosition(self._origin.x, self._origin.y, self._origin.z)
-            self.SetFocalPoint(self._focal_point.x, self._focal_point.y, self._focal_point.z)
-            self.SetViewUp(self._up.x, self._up.y, self._up.z)
-            self.SetClippingRange(self._near_clip, self._far_clip)
-            self.SetDistance(self._base_motion_speed)
-            self.SetViewAngle(self._fov)
+        if self._camera_data is not None:
+            self.SetViewAngle(self._camera_data.fov)
+            # clipping range will be overwritten later to improve z-Buffering
+            self.SetClippingRange(self._camera_data.near_clip, self._camera_data.far_clip)
+            self.SetViewUp(self._camera_data.up[0:3])
+            self.SetPosition(self._camera_data.position[0:3])
+            self.SetFocalPoint(self._camera_data.position+self._camera_data.direction*(self._camera_data.near_clip+self._scene_size))
         else:
-            raise Exception("Camera origin not set!")
+            raise Exception("Camera data not set!")
 
     @property
-    def auto_clipping(self):
-        """
-        Returns if auto clipping is enabled or disabled
-        :return: boolean
-        """
-        return self._auto_clipping
-
-    @auto_clipping.setter
-    def auto_clipping(self, new_value):
-        """
-        Setter function, sets the auto clipping value
-        :param new_value: boolean
-        :return:
-        """
-        self._auto_clipping = new_value
-
-    @property
-    def motion_speed(self):
+    def motion_speed(self) -> float:
         """
         Returns the camera motion speed
-        :return:
         """
         return self._motion_speed
 
     @motion_speed.setter
-    def motion_speed(self, speed):
+    def motion_speed(self, speed : float):
         """
         Setter function, sets the camera motion speed
-        :param speed:
-        :return:
         """
         self._motion_speed = speed
 
-    def set_focal_point(self, focal_p):
+    def set_focal_point(self, focal_p : Point3f):
         """
         Sets the focal point of the camera
-        :param focal_p: list[x,y,z]
-        :return:
         """
         self.SetFocalPoint(focal_p[0], focal_p[1], focal_p[2])
 
     def reset_motion_speed(self):
         """
         Resets the camera motion speed to 0.5
-        :return:
         """
         self._motion_speed = 0.5
 
     def pan_left(self):
         """
         Pan camera to the left
-        :return:
         """
-        self.Yaw(self._base_motion_speed*self._motion_speed)
+        self.Yaw(self._motion_speed)
 
     def pan_right(self):
         """
         Pan camera to the right
-        :return:
         """
-        self.Yaw(-self._base_motion_speed*self._motion_speed)
+        self.Yaw(-self._motion_speed)
 
     def move_up(self):
         """
         Move camera up
-        :return:
         """
-        self._motion_along_vector(self.GetViewUp(), -self._base_motion_speed*self._motion_speed)
+        self._motion_along_vector(self.GetViewUp(), -self._scene_size*self._motion_speed)
 
     def move_down(self):
         """
         Move camera down
-        :return:
         """
-        self._motion_along_vector(self.GetViewUp(), self._base_motion_speed*self._motion_speed)
+        self._motion_along_vector(self.GetViewUp(), self._scene_size*self._motion_speed)
 
     def move_right(self):
         """
         Move camera right
-        :return:
         """
-        self._motion_along_vector(self._get_rl_vector(), -self._base_motion_speed*self._motion_speed)
+        self._motion_along_vector(self._get_rl_vector(), -self._scene_size*self._motion_speed)
 
     def move_left(self):
         """
         Move camera left
-        :return:
         """
-        self._motion_along_vector(self._get_rl_vector(), self._base_motion_speed*self._motion_speed)
+        self._motion_along_vector(self._get_rl_vector(), self._scene_size*self._motion_speed)
 
     def move_forward(self):
         """
         Move camera forward
-        :return:
         """
-        self._motion_along_vector(self.GetDirectionOfProjection(), -self._base_motion_speed*self._motion_speed)
+        self._motion_along_vector(self.GetDirectionOfProjection(), -self._scene_size*self._motion_speed)
 
     def move_backward(self):
         """
         Move camera backward
-        :return:
         """
-        self._motion_along_vector(self.GetDirectionOfProjection(), self._base_motion_speed*self._motion_speed)
+        self._motion_along_vector(self.GetDirectionOfProjection(), self._scene_size*self._motion_speed)
 
     def _get_rl_vector(self):
         """
         Returns the right-left vector of the camera
-        :return:
         """
         vtm = self.GetViewTransformMatrix()
         x = vtm.GetElement(0, 0)
@@ -191,7 +151,7 @@ class Camera(vtk.vtkCamera):
         z = vtm.GetElement(0, 2)
         return [x, y, z]
 
-    def _motion_along_vector(self, vec, speed):
+    def _motion_along_vector(self, vec : Vec3f, speed : float):
         """
         Applies a motion along a vector with given speed
         :param vec:

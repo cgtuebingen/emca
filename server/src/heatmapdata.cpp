@@ -1,7 +1,8 @@
 /*
-	EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
-	comes with an Apache License 2.0
-	(c) Christoph Kreisl 2020
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
+    comes with an Apache License 2.0
+    (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
 	Licensed to the Apache Software Foundation (ASF) under one
 	or more contributor license agreements.  See the NOTICE file
@@ -58,21 +59,21 @@ uint32_t HeatmapData::DynamicTessellation::subdivideFace(uint32_t face) {
     if (sub+4 >= faces.size() || num_tess_vertices+3 >= vertices.size())
         return 0;
 
-    Vec3i vertex_ids = getFace(face);
+    Vec3u vertex_ids = getFace(face);
 
     // lookup or create midpoints
     // midpoints are opposite to the original face's vertices
-    int32_t mid_a = createMidpoint(vertex_ids.y(), vertex_ids.z());
-    int32_t mid_b = createMidpoint(vertex_ids.z(), vertex_ids.x());
-    int32_t mid_c = createMidpoint(vertex_ids.x(), vertex_ids.y());
+    uint32_t mid_a = createMidpoint(vertex_ids.y(), vertex_ids.z());
+    uint32_t mid_b = createMidpoint(vertex_ids.z(), vertex_ids.x());
+    uint32_t mid_c = createMidpoint(vertex_ids.x(), vertex_ids.y());
 
     // create subdivision faces
     // all faces are winding counter clockwise (to preserve up-vector)
     // face order is important for efficient lookup of the subdivided face
-    faces.at(sub+0) = Vec3i(vertex_ids.x(), mid_c, mid_b);
-    faces.at(sub+1) = Vec3i(vertex_ids.y(), mid_a, mid_c);
-    faces.at(sub+2) = Vec3i(vertex_ids.z(), mid_b, mid_a);
-    faces.at(sub+3) = Vec3i(mid_a, mid_b, mid_c);
+    faces.at(sub+0) = Vec3u(vertex_ids.x(), mid_c, mid_b);
+    faces.at(sub+1) = Vec3u(vertex_ids.y(), mid_a, mid_c);
+    faces.at(sub+2) = Vec3u(vertex_ids.z(), mid_b, mid_a);
+    faces.at(sub+3) = Vec3u(mid_a, mid_b, mid_c);
 
     num_tess_faces += 4;
 
@@ -90,7 +91,7 @@ uint32_t HeatmapData::DynamicTessellation::getTessellatedFace(const Point3f &p, 
             return face;
 
         // get vertices of middle face
-        const Vec3i vertex_ids = getFace(sub+3);
+        const Vec3u vertex_ids = getFace(sub+3);
         const Point3f a = getVertex(vertex_ids.x());
         const Point3f b = getVertex(vertex_ids.y());
         const Point3f c = getVertex(vertex_ids.z());
@@ -129,13 +130,13 @@ std::vector<Point3f> HeatmapData::DynamicTessellation::computeTessellatedVertice
     return combinded_vertices;
 }
 
-std::vector<Vec3i> HeatmapData::DynamicTessellation::computeTessellatedFaces() const {
+std::vector<Vec3u> HeatmapData::DynamicTessellation::computeTessellatedFaces() const {
     if (subdivisions.empty())
         return base_mesh->triangles;
 
     uint32_t num_base_faces = static_cast<uint32_t>(base_mesh->triangles.size());
 
-    std::vector<Vec3i> combined_faces;
+    std::vector<Vec3u> combined_faces;
     combined_faces.reserve(num_base_faces+3*subdivisions.size());
     uint32_t pos = 0;
 
@@ -173,7 +174,7 @@ std::vector<Vec3i> HeatmapData::DynamicTessellation::computeTessellatedFaces() c
     return combined_faces;
 }
 
-int32_t HeatmapData::DynamicTessellation::createMidpoint(int32_t vertex_a, int32_t vertex_b) {
+uint32_t HeatmapData::DynamicTessellation::createMidpoint(uint32_t vertex_a, uint32_t vertex_b) {
     if (vertex_b < vertex_a)
         std::swap(vertex_a, vertex_b);
 
@@ -197,7 +198,7 @@ int32_t HeatmapData::DynamicTessellation::createMidpoint(int32_t vertex_a, int32
 
     midpoint_cache.insert(std::make_pair(vertex_a, std::make_pair(vertex_b, mid_index)));
 
-    return static_cast<int32_t>(mid_index);
+    return mid_index;
 }
 
 void HeatmapData::addSample(const Point3f &position, uint32_t face, float value_r, float value_g, float value_b, float weight) {
@@ -270,7 +271,7 @@ void HeatmapData::finalizeData(bool replace_with_density) {
 
         if (replace_with_density) {
             if (face_data.weight > 0.0f) {
-                const Vec3i face = tessellation.getFace(i);
+                const Vec3u face = tessellation.getFace(i);
                 Point3f a = tessellation.getVertex(face.x());
                 Point3f b = tessellation.getVertex(face.y());
                 Point3f c = tessellation.getVertex(face.z());
@@ -294,7 +295,7 @@ std::vector<HeatmapData::IncrementalMean> HeatmapData::computeFaceData() const
     const uint32_t num_faces = tessellation.getNumFaces(); // includes replaced ones
     // gathers vertex ids of unknown faces - in a second pass, neighboring faces are identified
     // vertex --> id of unknown face
-    std::unordered_multimap<int32_t, uint32_t> unknown_face_vertices;
+    std::unordered_multimap<uint32_t, uint32_t> unknown_face_vertices;
 
     // copy of the face data (with gaps to be filled in)
     std::vector<IncrementalMean> filled_face_data(num_faces);
@@ -312,7 +313,7 @@ std::vector<HeatmapData::IncrementalMean> HeatmapData::computeFaceData() const
 
         // check for faces without data and add them to the multimap
         if (face_data.weight == 0.0f || std::isnan(face_data.weight)) {
-            Vec3i vertices = tessellation.getFace(i);
+            Vec3u vertices = tessellation.getFace(i);
             unknown_face_vertices.insert({{vertices.x(), i}, {vertices.y(), i}, {vertices.z(), i}});
             filled_face_data.at(i) = IncrementalMean{0.0f, 0.0f, 0.0f, 0.0f};
         }
@@ -332,7 +333,7 @@ std::vector<HeatmapData::IncrementalMean> HeatmapData::computeFaceData() const
             if (tessellation.isSubdivided(i))
                 continue;
 
-            Vec3i face = tessellation.getFace(i);
+            Vec3u face = tessellation.getFace(i);
             const auto it_x = unknown_face_vertices.find(face.x());
             const auto it_y = unknown_face_vertices.find(face.y());
             const auto it_z = unknown_face_vertices.find(face.z());
@@ -418,7 +419,7 @@ std::vector<HeatmapData::IncrementalMean> HeatmapData::computeVertexData() const
         }
 
         // accumulate the rest
-        Vec3i vertex_ids = tessellation.getFace(i);
+        Vec3u vertex_ids = tessellation.getFace(i);
         IncrementalMean data = face_data.at(i-num_subdivisions);
 
         for (uint32_t j=0; j<3; ++j) // there may be a clever weighting scheme to apply here - this kind of works though

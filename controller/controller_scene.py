@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +26,14 @@
 import typing
 from PySide2.QtCore import Slot
 from core.messages import StateMsg
+from model.model import Model
+from view.view_main.main_view import MainView
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 class ControllerRenderScene(object):
 
@@ -33,30 +42,28 @@ class ControllerRenderScene(object):
         Handles the interaction and logic with the RenderScene and RenderSceneOptions View.
     """
 
-    def __init__(self, parent, model, view):
+    def __init__(self, parent : Controller, model : Model, view : MainView):
         self._controller_main = parent
         self._model = model
         self._view = view
 
-    def handle_state_msg(self, tpl):
+    def handle_state_msg(self, tpl : typing.Tuple[StateMsg, typing.Any]):
         """
         Handle current state, messages mostly received from thread,
         which listens on the socket pipeline for incoming messages
-        :param tpl: (StateMsg, None or Datatype)
-        :return:
         """
         msg = tpl[0]
         if msg is StateMsg.DATA_INFO:
+            self._controller_main.stream.request_camera_data()
             # automatically request scene data once render info is available
-            if self._model.options_data.get_option_auto_scene_load():
-                self._view.view_render_scene.clear_scene_objects()
+            if self._model.options_data.auto_scene_load:
                 self._controller_main.stream.request_scene_data()
         elif msg is StateMsg.DATA_CAMERA:
-            self._view.view_render_scene.load_camera(tpl[1])
+            self._view.view_render_scene.scene_renderer.load_camera(tpl[1])
         elif msg is StateMsg.DATA_MESH:
-            self._view.view_render_scene.load_mesh(tpl[1])
+            self._view.view_render_scene.scene_renderer.load_mesh(tpl[1])
         elif msg is StateMsg.DATA_SCENE_INFO:
-            self._view.view_render_scene.process_scene_info(tpl[1])
+            self._view.view_render_scene.scene_renderer.process_scene_info(tpl[1])
 
     @Slot(bool)
     def reset_camera_position(self, clicked : bool):

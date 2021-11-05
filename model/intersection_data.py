@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,8 +23,8 @@
     SOFTWARE.
 """
 
-from core.point3 import Point3f
-from core.color3 import Color3f
+from core.point import Point3f
+from core.color import Color4f
 from stream.stream import Stream
 from model.user_data import UserData
 
@@ -39,23 +40,10 @@ class IntersectionData(UserData):
         if a next event estimation was set, if a intersection position was set and current estimate information at this point.
     """
 
-    def __init__(self):
-        UserData.__init__(self)
-        self._depth_idx = None
-        self._pos = None
-        self._visible_ne = None
-        self._pos_ne = None
-        self._li = None
-        self._le = None
+    def __init__(self, stream : Stream):
+        super().__init__(stream)
 
-    def deserialize(self, stream : Stream):
-        """
-        Deserialize a IntersectionData object from the socket stream
-        :param stream:
-        :return:
-        """
-        super().deserialize(stream)
-        self._depth_idx = stream.read_int()
+        self._depth_idx = stream.read_uint()
 
         # position
         self._pos = None
@@ -72,12 +60,12 @@ class IntersectionData(UserData):
         # the incident radiance estimate of the entire path evaluated up to this point
         self._li = None
         if stream.read_bool():
-            self._li = stream.read_color3f()
+            self._li = stream.read_color4f()
 
         # emission
         self._le = None
         if stream.read_bool():
-            self._le = stream.read_color3f()
+            self._le = stream.read_color4f()
 
     @property
     def depth_idx(self) -> typing.Optional[int]:
@@ -108,14 +96,14 @@ class IntersectionData(UserData):
         return self._pos_ne
 
     @property
-    def li(self) -> typing.Optional[Color3f]:
+    def li(self) -> typing.Optional[Color4f]:
         """
         Returns the current estimate at this intersection / path position
         """
         return self._li
 
     @property
-    def le(self) -> typing.Optional[Color3f]:
+    def le(self) -> typing.Optional[Color4f]:
         """
         Returns the emission at this intersection / path position
         """

@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +25,8 @@
 
 import configparser
 import os
-import sys
 import logging
+import typing
 
 
 class OptionsConfig(object):
@@ -35,120 +36,89 @@ class OptionsConfig(object):
         self._path_resources = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'resources'))
         self._filename = 'options.ini'
         self._filepath = os.path.join(self._path_resources, self._filename)
-        self.load_options_config(self._filepath)
 
-    def load_options_config(self, filepath):
         logging.info("Loading optionis.ini file")
-        if os.path.exists(filepath):
+        if os.path.exists(self._filepath):
             logging.info('... file exists loading configurations')
             # load options.ini from resource folder
             try:
                 self._config.read(self._filepath)
             except Exception as e:
                 logging.error('Loading options.ini file failed: {}'.format(e))
-                sys.exit(1)
-        else:
-            logging.info('... file does not exist creating new file with default configurations')
-            # create options.ini with default settings
-            self._config['Theme'] = {'theme': 'dark'}
-            self._config['Options'] = {
-                'auto_connect': 'False',
-                'auto_scene_load': 'False',
-                'auto_rendered_image_load': 'False'}
-            self._config['Last'] = {
-                'hostname': 'localhost',
-                'port': '50013',
-                'rendered_image_filepath': "",
-                'reference_image_filepath': ""}
-            with open(self._filepath, 'w') as configfile:
-                self._config.write(configfile)
-            logging.info("... done. Default auto generated file: {}".format(self._filepath))
 
-    def get_theme(self):
-        return self._config['Theme']['theme']
+        if not self._config.has_section('Theme'):
+            self._config.add_section('Theme')
+        if not self._config.has_section('Options'):
+            self._config.add_section('Options')
+        if not self._config.has_section('Last'):
+            self._config.add_section('Last')
 
-    def set_theme(self, theme):
+    @property
+    def theme(self) -> str:
+        return self._config['Theme'].get('theme', 'dark')
+
+    @theme.setter
+    def theme(self, theme : str):
         if theme == 'dark' or theme == 'light':
             self._config['Theme']['theme'] = theme
         else:
             logging.error("Wrong theme type...(dark|light)")
 
-    def get_option_auto_connect(self):
-        try:
-            val = self._config['Options']['auto_connect']
-            return val == 'True'
-        except Exception as e:
-            logging.error(e)
-            return False
+    @property
+    def auto_connect(self) -> bool:
+        return self._config['Options'].get('auto_connect', 'False') == 'True'
 
-    def set_options_auto_connect(self, value):
+    @auto_connect.setter
+    def auto_connect(self, value : bool):
         self._config['Options']['auto_connect'] = str(value)
 
-    def get_option_auto_scene_load(self):
-        try:
-            val = self._config['Options']['auto_scene_load']
-            return val == 'True'
-        except Exception as e:
-            logging.error(e)
-            return False
+    @property
+    def auto_scene_load(self) -> bool:
+        return self._config['Options'].get('auto_scene_load', 'False') == 'True'
 
-    def set_option_auto_scene_load(self, value):
+    @auto_scene_load.setter
+    def auto_scene_load(self, value : bool):
         self._config['Options']['auto_scene_load'] = str(value)
 
-    def get_option_auto_image_load(self):
-        try:
-            val = self._config['Options']['auto_rendered_image_load']
-            return val == 'True'
-        except Exception as e:
-            logging.error(e)
-            return False
+    @property
+    def auto_image_load(self) -> bool:
+        return self._config['Options'].get('auto_rendered_image_load', 'False') == 'True'
 
-    def set_option_auto_image_load(self, value):
+    @auto_image_load.setter
+    def auto_image_load(self, value : bool):
         self._config['Options']['auto_rendered_image_load'] = str(value)
 
-    def get_last_hostname(self):
-        return self._config['Last']['hostname']
+    @property
+    def last_hostname(self) -> str:
+        return self._config['Last'].get('hostname', 'localhost')
 
-    def set_last_hostname(self, hostname):
-        self._config['Last']['hostname'] = str(hostname)
+    @last_hostname.setter
+    def last_hostname(self, hostname : str):
+        self._config['Last']['hostname'] = hostname
 
-    def get_last_port(self):
-        return int(self._config['Last']['port'])
+    @property
+    def last_port(self) -> int:
+        return int(self._config['Last'].get('port', '50013'))
 
-    def set_last_port(self, port):
+    @last_port.setter
+    def last_port(self, port : int):
         self._config['Last']['port'] = str(port)
 
-    def set_last_hostname_and_port(self, hostname, port):
-        if self.get_last_hostname() != hostname:
-            self.set_last_hostname(hostname)
-        if self.get_last_port() != str(port):
-            self.set_last_port(port)
+    @property
+    def last_rendered_image_filepath(self) -> typing.Optional[str]:
+        return self._config['Last'].get('rendered_image_filepath')
 
-    def get_last_rendered_image_filepath(self):
-        path = self._config['Last'].get('rendered_image_filepath', None)
-        return path
+    @last_rendered_image_filepath.setter
+    def last_rendered_image_filepath(self, filepath : str):
+        self._config['Last']['rendered_image_filepath'] = filepath
 
-    def set_last_rendered_image_filepath(self, filepath):
-        self._config['Last']['rendered_image_filepath'] = str(filepath)
+    @property
+    def last_reference_image_filepath(self) -> typing.Optional[str]:
+        return self._config['Last'].get('reference_image_filepath')
 
-    def get_last_reference_image_filepath(self):
-        path = self._config['Last'].get('reference_image_filepath', None)
-        return path
-
-    def set_last_reference_image_filepath(self, filepath):
-        self._config['Last']['reference_image_filepath'] = str(filepath)
-
-    def is_last_hostname_set(self):
-        return self._config['Last']['hostname'] != ""
-
-    def is_last_port_set(self):
-        return self._config['Last']['port'] != ""
-
-    def is_last_rendered_image_filepath_set(self):
-        return self._config['Last']['rendered_image_filepath'] != ""
-
-    def is_last_reference_image_filepath_set(self):
-        return self._config['Last']['rendered_image_filepath'] != ""
+    @last_reference_image_filepath.setter
+    def last_reference_image_filepath(self, filepath : str):
+        self._config['Last']['reference_image_filepath'] = filepath
 
     def save(self):
         with open(self._filepath, 'w') as configfile:

@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +30,7 @@ class StateMsg(Enum):
     CONNECT             = 1
     SERVER_ERROR        = 2
     DATA_IMAGE          = 3
-    DATA_RENDER         = 4
+    DATA_PIXEL          = 4
     DATA_CAMERA         = 5
     DATA_SCENE_INFO     = 6
     DATA_MESH           = 7

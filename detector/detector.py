@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,6 @@
     SOFTWARE.
 """
 
-import six.moves as smo
 import numpy as np
 import logging
 import time
@@ -178,7 +178,7 @@ class Detector(object):
         R = []
         L = []
         minds = []
-        for i in smo.range(max_o + 1):
+        for i in range(max_o + 1):
             # Compute mean and std of x
             xmean = xm.mean()
             xstd = xm.std()
@@ -197,7 +197,7 @@ class Detector(object):
         R.pop(-1)
         # Find the number of outliers
         outliers_found = False
-        for i in smo.range(max_o - 1, -1, -1):
+        for i in range(max_o - 1, -1, -1):
             if R[i] > L[i]:
                 outliers_found = True
                 break

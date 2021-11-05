@@ -1,7 +1,8 @@
 /*
-	EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
-	comes with an Apache License 2.0
-	(c) Christoph Kreisl 2020
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
+    comes with an Apache License 2.0
+    (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
 	Licensed to the Apache Software Foundation (ASF) under one
 	or more contributor license agreements.  See the NOTICE file
@@ -76,17 +77,17 @@ class IntersectionData final : public UserData
 public:
     void setIntersectionPos(Point3f pos);
     void setNextEventEstimationPos(Point3f pos, bool visible);
-    void setIntersectionEstimate(Color3f li);
-    void setIntersectionEmission(Color3f le);
+    void setIntersectionEstimate(Color4f li);
+    void setIntersectionEmission(Color4f le);
 
     void serialize(Stream *stream) const override;
 
 private:
-    int m_depthIdx {-1}; /* current path depth */
+    uint32_t m_depthIdx {-1U}; /* current path depth */
     Point3f m_pos;       /* intersection point in world coordinates */
     Point3f m_posNE;     /* next event estimation point in world coordinates */
-    Color3f m_estimate;  /* current computed estimate at this intersection */
-    Color3f m_emission;  /* emission at current intersection point */
+    Color4f m_estimate;  /* current computed estimate at this intersection */
+    Color4f m_emission;  /* emission at current intersection point */
 
     bool m_hasPos      {false};
     bool m_hasNE       {false};
@@ -100,16 +101,16 @@ private:
 class PathData final : public UserData
 {
 public:
-    void setDepthIdx(int32_t depthIdx);
+    void setDepthIdx(uint32_t depthIdx);
     void setIntersectionPos(uint32_t depthIdx, Point3f pos);
     void setNextEventEstimationPos(uint32_t depthIdx, Point3f pos, bool occluded);
-    void setIntersectionEstimate(uint32_t depthIdx, Color3f li);
-    void setIntersectionEmission(uint32_t depthIdx, Color3f le);
+    void setIntersectionEstimate(uint32_t depthIdx, Color4f li);
+    void setIntersectionEmission(uint32_t depthIdx, Color4f le);
 
     void setPathOrigin(Point3f origin);
-    void setFinalEstimate(Color3f li);
+    void setFinalEstimate(Color4f li);
 
-    IntersectionData& intersectionAt(int32_t depthIdx) {
+    IntersectionData& intersectionAt(uint32_t depthIdx) {
         return m_intersections.at(depthIdx);
     }
 
@@ -117,10 +118,10 @@ public:
 
 private:
     std::vector<IntersectionData> m_intersections; /* data dictionary about each intersection */
-    int32_t m_sampleIdx {-1};                      /* Current sample index */
-    int32_t m_pathDepth {-1};                      /* Path length, amount of Intersections */
+    uint32_t m_sampleIdx {-1U};                    /* Current sample index */
+    uint32_t m_pathDepth {-1U};                    /* Path length, amount of Intersections */
     Point3f m_pathOrigin;                          /* Path origin */
-    Color3f m_finalEstimate;                       /* final light estimation of path */
+    Color4f m_finalEstimate;                       /* final light estimation of path */
     bool m_hasFinalEstimate {false};
 
     friend class DataApi;

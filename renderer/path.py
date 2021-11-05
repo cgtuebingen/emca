@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +49,7 @@ class Path(Shape):
 
         # start with an empty mesh - the path is updated afterwards
         super().__init__(vtk.vtkPolyData())
-        
+
         self.redraw()
 
     @property
@@ -158,7 +159,7 @@ class Path(Shape):
 
                 if its.pos is not None:
                     point_index = points.InsertNextPoint(its.pos.x, its.pos.y, its.pos.z)
-                    
+
                     if last_point_index is not None:
                         line = vtk.vtkLine()
                         line.GetPointIds().SetId(0, last_point_index)

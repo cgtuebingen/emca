@@ -1,7 +1,8 @@
 /*
-	EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
-	comes with an Apache License 2.0
-	(c) Christoph Kreisl 2020
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
+    comes with an Apache License 2.0
+    (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
 	Licensed to the Apache Software Foundation (ASF) under one
 	or more contributor license agreements.  See the NOTICE file
@@ -32,7 +33,7 @@ EMCA_NAMESPACE_BEGIN
 
 class Stream {
 public:
-    // general read/write functions for fundamental data types
+    // generic read/write functions for fundamental data types
     template<typename T, std::enable_if_t<std::is_fundamental_v<T>, int> = 0>
     T read() {
         T result;

@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,11 +23,13 @@
     SOFTWARE.
 """
 
+import typing
 import OpenEXR
 import Imath
 from PIL import Image
 from PIL.ImageQt import ImageQt as PilImageQt
-from PySide2.QtGui import QPixmap
+from PySide2.QtCore import QPoint
+from PySide2.QtGui import QColor, QPixmap
 from enum import Enum
 import array
 import numpy as np
@@ -37,7 +40,6 @@ import logging
 class SaveType(Enum):
     EXR     = 0
     PNG     = 1
-    JPEG    = 2
 
 
 class HDRImage(object):
@@ -62,12 +64,9 @@ class HDRImage(object):
     def filepath(self):
         return self._filepath
 
-    def load_exr(self, filepath_or_bytestream, reference=False):
+    def load_exr(self, filepath_or_bytestream : typing.Union[str, bytes], reference : bool = False) -> bool:
         """
         Loads an exr file with OpenEXR
-        :param filepath_or_bytestream: string or bytestream
-        :param reference: boolean
-        :return:
         """
         logging.info("Loading EXR ...")
         try:
@@ -91,7 +90,7 @@ class HDRImage(object):
             logging.error(e)
             return False
 
-    def is_pixmap_set(self):
+    def is_pixmap_set(self) -> bool:
         return self._pixmap is not None
 
     @property
@@ -103,10 +102,9 @@ class HDRImage(object):
         return self._exr
 
     @property
-    def pixmap(self):
+    def pixmap(self) -> QPixmap:
         """
         Returns the render image as pixmap
-        :return: QPixmap
         """
         if self._pixmap is None:
             #update pixmap if needed
@@ -146,7 +144,17 @@ class HDRImage(object):
                     g = g_ref
                     b = b_ref
 
-                (r_exp, g_exp, b_exp) = self.apply_exposure(r, g, b)
+                # apply exposure
+                if self._exposure == 0:
+                    r_exp = r
+                    g_exp = g
+                    b_exp = b
+                else:
+                    exposure_factor = np.power(2.0, self._exposure)
+
+                    r_exp = r*exposure_factor
+                    g_exp = g*exposure_factor
+                    b_exp = b*exposure_factor
 
                 if self._plusminus:
                     self._pixmap = self.create_pixmap_pm(r_exp, g_exp, b_exp)
@@ -160,64 +168,48 @@ class HDRImage(object):
         return self._pixmap
 
     @property
-    def exposure(self):
+    def exposure(self) -> float:
         return self._exposure
 
     @exposure.setter
-    def exposure(self, exposure):
+    def exposure(self, exposure : float):
         if self._exposure != exposure:
             self._pixmap = None
         self._exposure = exposure
 
     @property
-    def falsecolor(self):
+    def falsecolor(self) -> bool:
         return self._falsecolor
 
     @falsecolor.setter
-    def falsecolor(self, falsecolor):
+    def falsecolor(self, falsecolor : bool):
         if self._falsecolor != falsecolor:
             self._pixmap = None
         self._falsecolor = falsecolor
 
     @property
-    def plusminus(self):
+    def plusminus(self) -> bool:
         return self._plusminus
 
     @plusminus.setter
-    def plusminus(self, plusminus):
+    def plusminus(self, plusminus : bool):
         if self._plusminus != plusminus:
             self._pixmap = None
         self._plusminus = plusminus
 
     @property
-    def show_ref(self):
+    def show_ref(self) -> bool:
         return self._show_ref
 
     @show_ref.setter
-    def show_ref(self, show_ref):
+    def show_ref(self, show_ref : bool):
         if self._show_ref != show_ref and not self._plusminus:
             self._pixmap = None
         self._show_ref = show_ref
 
-    def apply_exposure(self, r, g, b):
-        if self._exposure == 0.0:
-            return r, g, b
-
-        factor = np.power(2.0, self._exposure)
-
-        r_exp = r*factor
-        g_exp = g*factor
-        b_exp = b*factor
-
-        return r_exp, g_exp, b_exp
-
-    def create_pixmap_srgb(self, r_exp, g_exp, b_exp):
+    def create_pixmap_srgb(self, r_exp : np.ndarray, g_exp : np.ndarray, b_exp : np.ndarray) -> QPixmap:
         """
         Converts an srgb image to a pixmap
-        :param r_exp:
-        :param g_exp:
-        :param b_exp:
-        :return: QPixmap
         """
 
         #even though this is 2.4, this corresponds to a gamma value of 2.2
@@ -237,7 +229,7 @@ class HDRImage(object):
         q_img = PilImageQt(Image.fromarray(srgb, 'RGB'))
         return QPixmap.fromImage(q_img).copy()
 
-    def create_pixmap_fc(self, r_exp, g_exp, b_exp):
+    def create_pixmap_fc(self, r_exp : np.ndarray, g_exp : np.ndarray, b_exp : np.ndarray) -> QPixmap:
 
         #max_intensity = np.max([r_exp,g_exp,b_exp], axis=0)
         avg_intensity = (r_exp+g_exp+b_exp)*(1.0/3.0)
@@ -252,7 +244,7 @@ class HDRImage(object):
         q_img = PilImageQt(Image.fromarray(srgb, 'RGB'))
         return QPixmap.fromImage(q_img).copy()
 
-    def create_pixmap_pm(self, r_exp, g_exp, b_exp):
+    def create_pixmap_pm(self, r_exp : np.ndarray, g_exp : np.ndarray, b_exp : np.ndarray) -> QPixmap:
         pos = np.minimum(255.0, (np.maximum(0.0, r_exp)+np.maximum(0.0, g_exp)+np.maximum(0.0, b_exp))*( 255.0*2.0/3.0))
         neg = np.minimum(255.0, (np.minimum(0.0, r_exp)+np.minimum(0.0, g_exp)+np.minimum(0.0, b_exp))*(-255.0*2.0/3.0))
 
@@ -263,12 +255,9 @@ class HDRImage(object):
         q_img = PilImageQt(Image.fromarray(srgb, 'RGB'))
         return QPixmap.fromImage(q_img).copy()
 
-    def save_as_exr(self, filename):
+    def save_as_exr(self, filename : str) -> bool:
         """
         Saves the current exr image under the given filename
-        (wrong gamma?! currently problems in saving exr images)
-        :param filename: string
-        :return:
         """
         try:
             dw = self._exr.header()['dataWindow']
@@ -289,29 +278,49 @@ class HDRImage(object):
             (Rs, Gs, Bs) = [array.array('f', Chan).tostring() for Chan in (R, G, B)]
 
             out = OpenEXR.OutputFile(filename, OpenEXR.Header(size[0], size[1]))
-            out.writePixels({'R': Rs, 'G': Gs, 'B': Gs})
+            out.writePixels({'R': Rs, 'G': Gs, 'B': Bs})
             return True
         except Exception as e:
             logging.error(e)
             return False
 
-    def save_as_png(self, filename):
+    def save_as_png(self, filename : str) -> bool:
         if self._exr is None:
             return False
         return self.pixmap.save(filename, "png")
 
-    def save_as_jpeg(self, filename):
-        if self._exr is None:
-            return False
-        return self.pixmap.save(filename, "jpeg")
-
-    def save(self, filename, save_type=SaveType.EXR):
+    def save(self, filename : str, save_type=SaveType.EXR) -> bool:
         if save_type is SaveType.EXR:
             return self.save_as_exr(filename)
         elif save_type is SaveType.PNG:
             return self.save_as_png(filename)
-        elif save_type is SaveType.JPEG:
-            return self.save_as_jpeg(filename)
         else:
             logging.info("Wrong SaveType: {}. Image will be saved as EXR".format(save_type))
             return self.save_as_exr(filename)
+
+    def get_pixel_color(self, pixel : QPoint) -> QColor:
+        pt = Imath.PixelType(Imath.PixelType.FLOAT)
+        r_str = self._exr.channel('R', pt, pixel.y(), pixel.y())
+        g_str = self._exr.channel('G', pt, pixel.y(), pixel.y())
+        b_str = self._exr.channel('B', pt, pixel.y(), pixel.y())
+
+        r = np.frombuffer(r_str, dtype=np.float32, count=1, offset=4*pixel.x())
+        g = np.frombuffer(g_str, dtype=np.float32, count=1, offset=4*pixel.x())
+        b = np.frombuffer(b_str, dtype=np.float32, count=1, offset=4*pixel.x())
+
+        #even though this is 2.4, this corresponds to a gamma value of 2.2
+        invSRGBGamma = 1.0/2.4
+
+        r_gamma = np.where(r > 0.0031308, ((255.0 * 1.055) * np.power(r, invSRGBGamma) - 0.055), r * (12.92 * 255.0))
+        g_gamma = np.where(g > 0.0031308, ((255.0 * 1.055) * np.power(g, invSRGBGamma) - 0.055), g * (12.92 * 255.0))
+        b_gamma = np.where(b > 0.0031308, ((255.0 * 1.055) * np.power(b, invSRGBGamma) - 0.055), b * (12.92 * 255.0))
+
+        logging.info(r_gamma)
+        logging.info(g_gamma)
+        logging.info(b_gamma)
+
+        srgb = np.uint8([np.uint8(np.clip(r_gamma, 0.0, 255.0)),
+                         np.uint8(np.clip(g_gamma, 0.0, 255.0)),
+                         np.uint8(np.clip(b_gamma, 0.0, 255.0))]).flatten()
+
+        return QColor(srgb[0], srgb[1], srgb[2])

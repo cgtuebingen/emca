@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -26,10 +27,27 @@ from PySide2.QtWidgets import QApplication
 from PySide2.QtWidgets import QMainWindow
 from PySide2.QtWidgets import QAction
 from PySide2.QtCore import Slot
+from view.view_main.view_connect_settings import ViewConnectSettings
+from view.view_main.view_detector_settings import ViewDetectorSettings
 from view.view_main.view_emca import ViewEMCA
 from view.view_main.view_about import ViewAbout
 from view.view_main.popup_messages import PopupMessages
-from view.view_main.pixel_icon import PixelIcon
+from view.view_main.view_filter_settings import ViewFilterSettings
+from view.view_main.view_options_settings import ViewOptions
+from view.view_main.view_render_settings import ViewRenderSettings
+from view.view_pixel_data.view_pixel_data import ViewPixelData
+from view.view_render_image.view_render_image import ViewRenderImage
+from view.view_render_scene.view_render_scene import ViewRenderScene
+from view.view_render_scene.view_render_scene_options import ViewRenderSceneOptions
+from view.view_sample_contribution.view_sample_contribution_plot import ViewSampleContribution
+from view.view_sample_contribution.view_sample_depth_plot import ViewSampleDepth
+from view.view_sample_contribution.view_sample_lum_plot import ViewSampleLuminance
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class MainView(QMainWindow):
@@ -53,21 +71,13 @@ class MainView(QMainWindow):
         self._view_popup = PopupMessages()
         # About information
         self._view_about = ViewAbout()
-        # Pixel Icon of selected Pixel in MainView
-        self._pixel_icon = PixelIcon()
         self.setCentralWidget(self._view_emca)
         self.setWindowTitle('Explorer of Monte Carlo based Algorithms (EMCA)')
         # Accept drops for Drag n drop events
         self.setAcceptDrops(True)
-        self.add_menu_bar()
         self._controller = None
 
-    def add_menu_bar(self):
-        """
-        Initialises and adds all menu items to the menu
-        :return:
-        """
-
+        # initialize menu
         options = QAction('Options', self)
         options.setShortcut('Ctrl+S')
         options.setToolTip('Options')
@@ -95,11 +105,9 @@ class MainView(QMainWindow):
         about = main_menu.addMenu("&About")
         about.addAction(about_action)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Set the connection to the controller
-        :param controller:
-        :return:
         """
         self._controller = controller
         self._view_emca.set_controller(controller)
@@ -112,157 +120,128 @@ class MainView(QMainWindow):
         """
         self._controller.close_app()
 
-    def enable_filter(self, enable):
+    def enable_filter(self, enable : bool):
         """
         Depending on enable, the filter button and its view will be enabled
-        :param enable: boolean
-        :return:
         """
         self._view_emca.btnFilter.setEnabled(enable)
 
     @Slot(bool, name='open_options')
-    def open_options(self, clicked):
+    def open_options(self, clicked : bool):
         """
         Opens the options window
-        :param clicked: boolean
-        :return:
         """
         self._controller.options.open_options(clicked)
 
     @Slot(bool, name='load_image_dialog')
-    def load_image_dialog(self, clicked):
+    def load_image_dialog(self, clicked : bool):
         """
         Opens the dialog to load a file
-        :param clicked: boolean
-        :return:
         """
         self._controller.options.load_image_dialog(clicked)
 
     @property
-    def controller(self):
+    def controller(self) -> Controller:
         """
         Returns the controller
-        :return: Controller
         """
         return self._controller
 
     @property
-    def pixel_icon(self):
-        """
-        Return the pixel icon object
-        :return: PixelIcon
-        """
-        return self._pixel_icon
-
-    @property
-    def view_emca(self):
+    def view_emca(self) -> ViewEMCA:
         """
         Returns the view widget of EMCA
-        :return: QWidget
         """
         return self._view_emca
 
     @property
-    def view_popup(self):
+    def view_popup(self) -> PopupMessages:
         """
         Returns the view handling the popup messages
-        :return: QObject
         """
         return self._view_popup
 
     @property
-    def view_render_info(self):
+    def view_render_info(self) -> ViewRenderSettings:
         """
         Returns the view handling the render info
-        :return: QWidget
         """
         return self._view_emca.view_render_info
 
     @property
-    def view_rgb_plot(self):
+    def view_rgb_plot(self) -> ViewSampleContribution:
         """
         Returns the view handling the final estimate view
-        :return: QWidget
         """
         return self._view_emca.view_rgb_plot
 
     @property
-    def view_lum_plot(self):
+    def view_lum_plot(self) -> ViewSampleLuminance:
         """
         Returns the view handling the final estimate view
-        :return: QWidget
         """
         return self._view_emca.view_lum_plot
 
     @property
-    def view_depth_plot(self):
+    def view_depth_plot(self) -> ViewSampleDepth:
         """
         Returns the view handling the final estimate view
-        :return: QWidget
         """
         return self._view_emca.view_depth_plot
 
     @property
-    def view_connect(self):
+    def view_connect(self) -> ViewConnectSettings:
         """
         Returns the view handling the connect settings
-        :return: QWidget
         """
         return self._view_emca.view_connect
 
     @property
-    def view_filter(self):
+    def view_filter(self) -> ViewFilterSettings:
         """
         Returns the view handling the filter
-        :return: QWidget
         """
         return self._view_emca.view_filter
 
     @property
-    def view_render_image(self):
+    def view_render_image(self) -> ViewRenderImage:
         """
         Returns the view handling the rendered image
-        :return: QWidget
         """
         return self._view_emca.view_render_image
 
     @property
-    def view_render_scene(self):
+    def view_render_scene(self) -> ViewRenderScene:
         """
         Returns the view handling the 3D viewer
-        :return: QWidget
         """
         return self._view_emca.view_render_scene
 
     @property
-    def view_render_scene_options(self):
+    def view_render_scene_options(self) -> ViewRenderSceneOptions:
         """
         Returns the view handling the scene options
-        :return: QWidget
         """
         return self._view_emca.view_render_scene_options
 
     @property
-    def view_render_data(self):
+    def view_pixel_data(self) -> ViewPixelData:
         """
         Returns the view handling the render data
-        :return: QWidget
         """
-        return self._view_emca.view_render_data
+        return self._view_emca.view_pixel_data
 
     @property
-    def view_detector(self):
+    def view_detector(self) -> ViewDetectorSettings:
         """
         Returns the view handling the detector
-        :return: QWidget
         """
         return self._view_emca.view_detector
 
     @property
-    def view_options(self):
+    def view_options(self) -> ViewOptions:
         """
         Returns the view handling the options
-        :return: QWidget
         """
         return self._view_emca.view_options
 

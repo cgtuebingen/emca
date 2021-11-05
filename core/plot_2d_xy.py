@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -97,16 +98,14 @@ class ScatterPlot2DXY(FigureBase):
     # point selection
     def select(self, mousedown, mouseup):
         mask = self.highlighter.inside(mousedown, mouseup, self.line.get_offsets()[:,0], self.line.get_offsets()[:,1])
-        self.highlighter.callback_send_update_path(np.int32(self.line.get_offsets()[mask,0]), False)
+        self.highlighter.callback_send_update_path(np.int32(self.line.get_offsets()[mask,0]), self.highlighter._hold_shift)
 
     # point highlighting
-    def highlight(self, indices):
+    def highlight(self, path_indices : np.ndarray):
         """
         Highlight the given indices
-        :param indices: numpy array containing path indices
-        :return:
         """
-        mask = np.isin(self.x, indices)
+        mask = np.isin(self.x, path_indices)
         self.line.set_color(np.where(mask, 'yellow', self.color_dots))
 
         self.redraw()

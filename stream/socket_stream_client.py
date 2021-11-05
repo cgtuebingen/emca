@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,12 +23,18 @@
     SOFTWARE.
 """
 
-from PySide2.QtCore import QThread
+from PySide2.QtCore import QPoint, QThread
 from stream.socket_stream import SocketStream
 from core.messages import ServerMsg
 from core.messages import StateMsg
 from PySide2.QtCore import Signal
 import logging
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from model.model import Model
+else:
+    from typing import Any as Model
 
 
 class SocketStreamClient(QThread):
@@ -41,16 +48,16 @@ class SocketStreamClient(QThread):
 
     _sendStateMsgSig = Signal(tuple)
 
-    def __init__(self, port, hostname):
+    def __init__(self, hostname : str, port : int):
         QThread.__init__(self)
         # init socket stream
-        self._stream = SocketStream(port=port, hostname=hostname)
+        self._stream = SocketStream(hostname, port)
         # model will be used to deserialize data within this thread
         self._model = None
         # bool to check an open socket connection
         self._is_connected = False
 
-    def set_model(self, model):
+    def set_model(self, model : Model):
         """
         Set Model / Dataset
         :param model: Model
@@ -66,42 +73,40 @@ class SocketStreamClient(QThread):
         self._sendStateMsgSig.connect(callback)
 
     @property
-    def stream(self):
+    def stream(self) -> SocketStream:
         """
         Return socket stream connection
-        :return: Stream
         """
         return self._stream
 
     def request_render_info(self):
         """
         Requests the render info data package from the server
-        :return:
         """
         self._stream.write_short(ServerMsg.EMCA_REQUEST_RENDER_INFO.value)
 
-    def request_render_image(self, sample_count):
+    def request_render_image(self, sample_count : int):
         """
         Requests the render image from the server (starts the rendering process)
-        :return:
         """
         self._stream.write_short(ServerMsg.EMCA_REQUEST_RENDER_IMAGE.value)
-        self._stream.write_uint(int(sample_count))
+        self._stream.write_uint(sample_count)
+
+    def request_camera_data(self):
+        """
+        Requests the camera data from the server
+        """
+        self._stream.write_short(ServerMsg.EMCA_REQUEST_CAMERA.value)
 
     def request_scene_data(self):
         """
         Requests the three-dimensional scene data from the server
-        :return:
         """
-        self._stream.write_short(ServerMsg.EMCA_REQUEST_CAMERA.value)
         self._stream.write_short(ServerMsg.EMCA_REQUEST_SCENE.value)
 
-    def request_render_data(self, pixel, sample_count):
+    def request_render_pixel(self, pixel : QPoint, sample_count : int):
         """
         Requests the render data of the selected pixel
-        :param pixel: (x,y)
-        :param sample_count: sampleCount Integer
-        :return:
         """
         logging.info('Request pixel=({},{})'.format(pixel.x(), pixel.y()))
         self._stream.write_short(ServerMsg.EMCA_REQUEST_RENDER_PIXEL.value)
@@ -112,18 +117,16 @@ class SocketStreamClient(QThread):
     def request_disconnect(self):
         """
         Sends disconnect signal to server
-        :return:
         """
         self._stream.write_short(ServerMsg.EMCA_DISCONNECT.value)
 
-    def is_connected(self):
+    def is_connected(self) -> bool:
         """
         Returns true when there is a open socket connection
-        :return: boolean
         """
         return self._stream.is_connected()
 
-    def connect_socket_stream(self, hostname, port):
+    def connect_socket_stream(self, hostname : str, port : int):
         """
         Connects the socket stream and returns if successful
         :return: True|False, None|ErrorMsg
@@ -182,21 +185,21 @@ class SocketStreamClient(QThread):
             #logging.info('msg={} is state={} or plugin={}'.format(msg, state, plugin))
 
             if plugin:
-                plugin.deserialize(stream=self._stream)
+                plugin.deserialize(self._stream)
                 self._sendStateMsgSig.emit((StateMsg.UPDATE_PLUGIN, plugin.flag))
             elif state is ServerMsg.EMCA_SUPPORTED_PLUGINS:
-                self._model.deserialize_supported_plugins(stream=self._stream)
+                self._model.deserialize_supported_plugins(self._stream)
             elif state is ServerMsg.EMCA_RESPONSE_RENDER_INFO:
-                self._model.deserialize_render_info(stream=self._stream)
+                self._model.deserialize_render_info(self._stream)
             elif state is ServerMsg.EMCA_RESPONSE_RENDER_IMAGE:
                 path = self._stream.read_string()
                 self._sendStateMsgSig.emit((StateMsg.DATA_IMAGE, path))
             elif state is ServerMsg.EMCA_RESPONSE_RENDER_PIXEL:
-                self._model.deserialize_render_data(stream=self._stream)
+                self._model.deserialize_pixel_data(self._stream)
             elif state is ServerMsg.EMCA_RESPONSE_CAMERA:
-                self._model.deserialize_camera(stream=self._stream)
+                self._model.deserialize_camera(self._stream)
             elif state is ServerMsg.EMCA_RESPONSE_SCENE:
-                self._model.deserialize_scene_objects(stream=self._stream)
+                self._model.deserialize_scene_objects(self._stream)
             elif state is ServerMsg.EMCA_DISCONNECT:
                 self._sendStateMsgSig.emit((StateMsg.DISCONNECT, None))
                 break

@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +23,8 @@
     SOFTWARE.
 """
 
+import typing
+
 from PySide2.QtCore import QObject
 from PySide2.QtCore import Slot
 from core.messages import StateMsg
@@ -33,6 +36,11 @@ from controller.controller_options import ControllerOptions
 import numpy as np
 import logging
 import time
+from model.model import Model
+from model.pixel_data import PixelData
+from renderer.scene_renderer import SceneRenderer
+
+from view.view_main.main_view import MainView
 
 
 class Controller(QObject):
@@ -42,7 +50,7 @@ class Controller(QObject):
         Contains Sub-Controllers handling specific sub logic.
     """
 
-    def __init__(self, model, view, parent=None):
+    def __init__(self, model : Model, view : MainView, parent=None):
         QObject.__init__(self, parent=parent)
 
         self._model = model
@@ -62,60 +70,52 @@ class Controller(QObject):
         self._model.set_controller(self)
         self._model.set_callback(self.handle_state_msg)
 
-        self.init_plugins()
+        # initialize plugin buttons
+        self._view.view_emca.add_plugins(self._model.plugins_handler.plugins)
 
     @property
-    def detector(self):
+    def detector(self) -> ControllerDetector:
         """
         Returns the sub-controller which handles the detector logic
         """
         return self._controller_detector
 
     @property
-    def filter(self):
+    def filter(self) -> ControllerFilter:
         """
         Returns the sub-controller which handles the filter logic
         """
         return self._controller_filter
 
     @property
-    def stream(self):
+    def stream(self) -> ControllerSocketStream:
         """
         Returns the sub-controller which handles the socket stream logic
         """
         return self._controller_stream
 
     @property
-    def scene(self):
+    def scene(self) -> ControllerRenderScene:
         """
         Returns the sub-controller which handles the 3d scene logic
         """
         return self._controller_scene
 
     @property
-    def options(self):
+    def options(self) -> ControllerOptions:
         """
         Returns the sub-controller which handles the option logic
         """
         return self._controller_options
 
-    def init_scene_renderer(self, scene_renderer):
+    def init_scene_renderer(self, scene_renderer : SceneRenderer):
         self._view.view_render_scene.init_scene_renderer(scene_renderer)
         # set scene renderer to plugins
         self._model.plugins_handler.set_scene_renderer(self._view.view_render_scene.scene_renderer)
         scene_renderer.set_controller(self)
 
-    def init_plugins(self):
-        """
-        Init all views with parameters from the model (dataset)
-        :return:
-        """
-        # set plugin btn
-        plugins = self._model.plugins_handler.plugins
-        self._view.view_emca.add_plugins(plugins)
-
     @Slot(tuple, name='handle_state_msg')
-    def handle_state_msg(self, tpl):
+    def handle_state_msg(self, tpl : typing.Tuple[StateMsg, typing.Any]):
         """
         Handle current state, messages mostly received from thread,
         which listens on the socket pipeline for incoming messages
@@ -135,21 +135,22 @@ class Controller(QObject):
                     self._controller_options.save_options({'rendered_image_filepath': rendered_image_filepath})
             except Exception as e:
                 self._view.view_popup.error_no_output_filepath(str(e))
-        elif msg is StateMsg.DATA_RENDER:
+        elif msg is StateMsg.DATA_PIXEL:
             start = time.time()
-            if not tpl[1].valid_sample_count():
+            pixel_data : PixelData = tpl[1]
+            if len(pixel_data.dict_paths) == 0:
                 self._view.view_popup.error_no_sample_idx_set("")
                 return None
-            self._view.view_render_scene.load_traced_paths(tpl[1])
-            self._view.view_filter.init_data(tpl[1])
+            self._view.view_render_scene.load_traced_paths(pixel_data)
+            self._view.view_filter.init_data(pixel_data)
             self._view.enable_filter(True)
-            self._view.view_render_data.enable_view(True)
-            self._model.plugins_handler.init_data(tpl[1])
-            if self._model.load_sample_contribution_data(self._model.render_data.dict_paths):
+            self._view.view_pixel_data.enable_view(True)
+            self._model.plugins_handler.init_data(pixel_data)
+            if self._model.final_estimate_data.update_pixel_data(self._model.pixel_data):
                 self._view.view_rgb_plot.plot_final_estimate(self._model.final_estimate_data)
                 self._view.view_lum_plot.plot_final_estimate(self._model.final_estimate_data)
                 self._view.view_depth_plot.plot_final_estimate(self._model.final_estimate_data)
-            logging.info("process render data runtime: {}s".format(time.time() - start))
+            logging.info("process pixel data runtime: {}s".format(time.time() - start))
         elif msg is StateMsg.DATA_NOT_VALID:
             logging.error("Data is not valid!")
             # todo handle
@@ -178,32 +179,29 @@ class Controller(QObject):
             self._view.view_render_scene_options.show()
 
     @Slot(bool, name='show_all_traced_paths')
-    def show_all_traced_paths(self, enabled):
+    def show_all_traced_paths(self, enabled : bool):
         """
         Informs the renderer to show all traced paths
-        :param enabled:
-        :return:
         """
         indices = np.array([])
         if enabled:
-            indices = self._model.render_data.get_indices()
+            indices = self._model.pixel_data.get_indices()
         self.update_path(indices, False)
 
     def update_render_info_sample_count(self, sample_count : int):
         """
         Updates the sample count value of render info
         """
-        render_info = self._model.render_info
-        render_info.sample_count = sample_count
+        self._model.render_info.sample_count = sample_count
 
     def prepare_new_data(self):
         """
         Prepare view and model for new incoming pixel render data
         (In most cases clear views and data for new incoming render data)
         """
-        self._view.view_render_scene.prepare_new_data()
-        self._view.view_render_data.prepare_new_data()
-        self._view.view_filter.prepare_new_data()
+        self._view.view_render_scene.clear_traced_paths()
+        self._view.view_pixel_data.clear()
+        self._view.view_filter.clear()
         self._model.prepare_new_data()
 
     def update_path(self, indices : np.ndarray, add_item : bool):
@@ -229,7 +227,7 @@ class Controller(QObject):
         # update all plugins
         self._model.plugins_handler.update_path_indices(new_indices)
         # update render data view
-        self._view.view_render_data.show_path_data(new_indices, self._model.render_data)
+        self._view.view_pixel_data.show_path_data(new_indices, self._model.pixel_data)
         # deselect path if no longer contained in the indices
         if self._model._current_path_index is not None and self._model._current_path_index not in new_indices:
             self.select_path(None)
@@ -238,7 +236,7 @@ class Controller(QObject):
             self.select_path(new_indices[0])
         self._model.current_path_indices = new_indices
 
-    def select_path(self, path_index):
+    def select_path(self, path_index : typing.Optional[int]):
         """
         Send path index update to all views
         """
@@ -250,13 +248,13 @@ class Controller(QObject):
         # this index must be an element of indices
         self._view.view_render_scene.select_path(path_index)
         # select path in render data view
-        self._view.view_render_data.select_path(path_index)
+        self._view.view_pixel_data.select_path(path_index)
         # send path index, update plugins
         self._model.plugins_handler.select_path(path_index)
         # save current path_index
         self._model.current_path_index = path_index
 
-    def select_intersection(self, path_idx, its_idx):
+    def select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         """
         Send intersection index update to all views
         """
@@ -268,7 +266,7 @@ class Controller(QObject):
         # select intersection in 3D scene
         self._view.view_render_scene.select_intersection(path_idx, its_idx)
         # select intersection in render data view
-        self._view.view_render_data.select_intersection(path_idx, its_idx)
+        self._view.view_pixel_data.select_intersection(path_idx, its_idx)
         # send intersection index, update plugins
         self._model.plugins_handler.select_intersection(path_idx, its_idx)
         # save current intersection index

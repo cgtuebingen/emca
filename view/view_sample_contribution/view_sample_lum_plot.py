@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +28,14 @@ from PySide2.QtWidgets import QWidget
 from PySide2.QtWidgets import QVBoxLayout
 import logging
 
+from model.contribution_data import SampleContributionData
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
+
 
 class ViewSampleLuminance(QWidget):
 
@@ -51,30 +60,25 @@ class ViewSampleLuminance(QWidget):
         layout.addWidget(self._sample_contribution_plot)
         layout.addWidget(self._sample_contribution_plot.create_navigation_toolbar(self))
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
-        :param controller: Controller
-        :return:
         """
         self._controller = controller
 
     def apply_theme(self, theme):
         self._sample_contribution_plot.apply_theme(theme)
 
-    def plot_final_estimate(self, final_estimate):
+    def plot_final_estimate(self, final_estimate : SampleContributionData):
         """
         Plot SampleContribution data with final estimate values from model
-        :param final_estimate: FinalEstimate
-        :return:
         """
         if not self._visible:
             self._data = final_estimate
             return
 
-        if final_estimate.is_valid():
-            self._sample_contribution_plot.plot_2d(final_estimate.plot_data_x,
-                                                    final_estimate.luminance)
+        self._sample_contribution_plot.plot_2d(final_estimate.indices,
+                                               final_estimate.luminance)
 
     @property
     def visible(self):

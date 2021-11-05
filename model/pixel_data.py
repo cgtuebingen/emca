@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +30,7 @@ import numpy as np
 import logging
 
 
-class RenderData(object):
+class PixelData(object):
 
     """
         RenderData
@@ -39,24 +40,19 @@ class RenderData(object):
     """
 
     def __init__(self):
-        # amount of used samples per pixel
-        self._sample_count = -1
         # {sample_index / path_index : PathData}
         self._dict_paths = {}  # ordered dict (since Python 3.7)
 
     def deserialize(self, stream : Stream):
         """
         Deserialize a DataView object from the socket stream
-        :param stream:
-        :return:
         """
-        self._sample_count = stream.read_uint()
+        sample_count = stream.read_uint()
         self._dict_paths.clear()
-        logging.info("SampleCount: {}".format(self._sample_count))
+        logging.info("SampleCount: {}".format(sample_count))
         # deserialize the amount of paths which were traced through the selected pixel
-        for sample in range(0, self._sample_count):
-            path_data = PathData()
-            path_data.deserialize(stream)
+        for sample in range(sample_count):
+            path_data = PathData(stream)
             # append deserialized path to dict
             self._dict_paths[path_data.sample_idx] = path_data
 
@@ -64,44 +60,23 @@ class RenderData(object):
     def dict_paths(self) -> typing.Dict[int, PathData]:
         """
         Returns a dict containing all traced paths through the pixel
-        :return: dict{path_idx : PathData, ...}
         """
         return self._dict_paths
 
-    @property
-    def sample_count(self):
-        """
-        Returns the sample count
-        :return: integer
-        """
-        return self._sample_count
-
-    def valid_sample_count(self):
-        """
-        Checks if the sample count is valid > 0
-        :return:
-        """
-        return self._sample_count > 0
-
-    def get_indices(self):
+    def get_indices(self) -> np.ndarray:
         """
         Returns all path indices as numpy array
-        :return: numpy array
         """
         return np.array(list(self._dict_paths.keys()))
 
-    def to_string(self):
+    def to_string(self) -> str:
         """
         Returns a string with class information
-        :return: string
         """
-        return 'sampleCount = {} \n' \
-               'dictPathsSize = {}'.format(self._sample_count, len(self._dict_paths))
+        return 'number of paths = {}'.format(len(self._dict_paths))
 
     def clear(self):
         """
         Clears the data
-        :return:
         """
-        self._sample_count = -1
         self._dict_paths.clear()

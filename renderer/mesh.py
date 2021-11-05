@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -108,7 +109,7 @@ class Mesh(Shape):
             else:
                 # apply colormap
                 self.mapper.SetColorModeToMapScalars()
-            
+
             # disable specular color if there are face colors
             self.GetProperty().SetSpecular(0)
 

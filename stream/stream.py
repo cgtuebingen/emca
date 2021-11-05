@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +23,9 @@
     SOFTWARE.
 """
 
-from core.color3 import Color3f
-from core.vector3 import Vec3i
-from core.vector3 import Vec3f
-from core.point2 import Point2f
-from core.point2 import Point2i
-from core.point3 import Point3f
-from core.point3 import Point3i
+from core.color import Color4f
+from core.point import Point2f, Point2i, Point3f, Point3i
+from core.vector import Vec3f, Vec3i, Vec3u
 
 import abc
 import struct
@@ -205,6 +202,10 @@ class Stream(object):
         data = self.read(size * SizeOf.INT.value)
         return np.frombuffer(data, np.int32, size)
 
+    def read_uint_array(self, size) -> np.ndarray:
+        data = self.read(size * SizeOf.UNSIGNED_INT.value)
+        return np.frombuffer(data, np.uint32, size)
+
     def read_point2f(self) -> Point2f:
         xs = self.read_float_array(2)
         return Point2f(xs[0], xs[1])
@@ -225,12 +226,11 @@ class Stream(object):
         xs = self.read_float_array(3)
         return Vec3f(xs[0], xs[1], xs[2])
 
-    def read_vec3i(self) -> Vec3i:
-        xs = self.read_int_array(3)
-        return Vec3i(xs[0], xs[1], xs[2])
+    def read_vec3u(self) -> Vec3i:
+        xs = self.read_uint_array(3)
+        return Vec3u(xs[0], xs[1], xs[2])
 
-    def read_color3f(self) -> Color3f:
-        # FIXME: change API to transfer just 3 floats, otherwise call this color4f
+    def read_color4f(self) -> Color4f:
         xs = self.read_float_array(4)
-        return Color3f(xs[0], xs[1], xs[2])
+        return Color4f(xs[0], xs[1], xs[2], xs[3])
 

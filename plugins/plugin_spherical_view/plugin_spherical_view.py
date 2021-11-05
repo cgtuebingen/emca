@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +24,9 @@
 """
 
 from core.plugin import Plugin, PluginType
+from model.pixel_data import PixelData
 from plugins.plugin_spherical_view.view_spherical_view_image import ViewSphericalViewImage
-from core.point2 import Point2i
+from core.point import Point2i
 from core.pyside2_uic import loadUi
 import io
 import os
@@ -44,7 +46,7 @@ class SphericalView(Plugin):
         loadUi(ui_filepath, self)
 
         self._path = None
-        self._render_data = None
+        self._pixel_data = None
         self._render_size = Point2i(256, 128)
         self._sample_count = 16
         self._integrator = "path"
@@ -66,8 +68,8 @@ class SphericalView(Plugin):
         pass
 
     def select_intersection(self, path_idx, its_idx):
-        if self._render_data:
-            dict_paths = self._render_data.dict_paths
+        if self._pixel_data:
+            dict_paths = self._pixel_data.dict_paths
             self._spherical_view.select_intersection(dict_paths, path_idx, its_idx)
 
     def serialize(self, stream):
@@ -108,5 +110,5 @@ class SphericalView(Plugin):
                 self._spherical_view.enable_buttons(True)
             self._spherical_view.update_hightlights()
 
-    def init_render_data(self, render_data):
-        self._render_data = render_data
+    def init_pixel_data(self, pixel_data : PixelData):
+        self._pixel_data = pixel_data

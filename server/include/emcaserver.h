@@ -1,7 +1,8 @@
 /*
-	EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
-	comes with an Apache License 2.0
-	(c) Christoph Kreisl 2020
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
+    comes with an Apache License 2.0
+    (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
 	Licensed to the Apache Software Foundation (ASF) under one
 	or more contributor license agreements.  See the NOTICE file
@@ -82,6 +83,8 @@ private:
     socket_t m_clientSocket {-1};
     socket_t m_serverSocket {-1};
     std::unique_ptr<SocketStream> m_stream;
+
+    std::vector<Mesh> m_mesh_data;
 };
 
 EMCA_NAMESPACE_END

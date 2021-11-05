@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -73,3 +74,224 @@ class Vec(np.ndarray):
         # arr.view(Vec).
         self.decimals = getattr(obj, 'decimals', 2)
         # We do not need to return anything
+
+
+class Vec2f(Vec):
+
+    """
+        Vec2f
+        Represents a point2 float class
+    """
+
+    def __new__(subtype, x=0, y=0):
+        obj = super(Vec2f, subtype).__new__(Vec2f, (2,), np.float32)
+        obj[0] = x
+        obj[1] = y
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    def to_string(self):
+        return '[{}, {}]'.format(self[0], self[1])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}]'.format(self.decimals,
+                                               self[0],
+                                               self[1])
+
+
+class Vec2i(Vec):
+    def __new__(subtype, x=0, y=0):
+        obj = super(Vec2i, subtype).__new__(Vec2i, (2,), np.int32)
+        obj[0] = x
+        obj[1] = y
+        obj.decimals = 0
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    def to_string(self):
+        return '[{}, {}]'.format(self[0], self[1])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}]'.format(self.decimals,
+                                               self[0],
+                                               self[1])
+
+
+class Vec3f(Vec):
+
+    """
+        Vec3f
+        Represents a point3 float class
+    """
+
+    def __new__(subtype, x=0, y=0, z=0):
+        obj = super(Vec3f, subtype).__new__(Vec3f, (3,), np.float32)
+        obj[0] = x
+        obj[1] = y
+        obj[2] = z
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    @property
+    def z(self):
+        return self[2]
+
+    @z.setter
+    def z(self, new_z):
+        self[2] = new_z
+
+    def to_string(self):
+        return '[{}, {}, {}]'.format(self[0], self[1], self[2])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}, {3:.{0}f}]'.format(self.decimals,
+                                                          self[0],
+                                                          self[1],
+                                                          self[2])
+
+
+class Vec3i(Vec):
+
+    """
+        Vec3i
+        Represents point3 integer class
+    """
+
+    def __new__(subtype, x=0, y=0, z=0):
+        obj = super(Vec3i, subtype).__new__(Vec3i, (3,), np.int32)
+        obj[0] = x
+        obj[1] = y
+        obj[2] = z
+        obj.decimals = 0
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    @property
+    def z(self):
+        return self[2]
+
+    @z.setter
+    def z(self, new_z):
+        self[2] = new_z
+
+    def to_string(self):
+        return '[{}, {}, {}]'.format(self[0], self[1], self[2])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}, {3:.{0}f}]'.format(self.decimals,
+                                                          self[0],
+                                                          self[1],
+                                                          self[2])
+
+class Vec3u(Vec):
+
+    """
+        Vec3u
+        Represents point3 unsigned integer class
+    """
+
+    def __new__(subtype, x=0, y=0, z=0):
+        obj = super(Vec3i, subtype).__new__(Vec3u, (3,), np.uint32)
+        obj[0] = x
+        obj[1] = y
+        obj[2] = z
+        obj.decimals = 0
+
+        return obj
+
+    @property
+    def x(self):
+        return self[0]
+
+    @x.setter
+    def x(self, new_x):
+        self[0] = new_x
+
+    @property
+    def y(self):
+        return self[1]
+
+    @y.setter
+    def y(self, new_y):
+        self[1] = new_y
+
+    @property
+    def z(self):
+        return self[2]
+
+    @z.setter
+    def z(self, new_z):
+        self[2] = new_z
+
+    def to_string(self):
+        return '[{}, {}, {}]'.format(self[0], self[1], self[2])
+
+    def __str__(self):
+        return '[{1:.{0}f}, {2:.{0}f}, {3:.{0}f}]'.format(self.decimals,
+                                                          self[0],
+                                                          self[1],
+                                                          self[2])

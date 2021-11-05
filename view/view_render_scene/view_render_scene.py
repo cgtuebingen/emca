@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,11 +24,19 @@
 """
 
 import typing
+import numpy as np
+from model.pixel_data import PixelData
 from renderer.scene_renderer import SceneRenderer
 from PySide2.QtWidgets import QWidget
 from core.pyside2_uic import loadUi
 import os
 import logging
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class ViewRenderScene(QWidget):
@@ -44,13 +53,10 @@ class ViewRenderScene(QWidget):
 
         self._controller = None
         self._scene_renderer = None
-        self._scene_loaded = False
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
-        :param controller: Controller
-        :return:
         """
         self._controller = controller
         self.btnSceneOptions.clicked.connect(controller.display_view_render_scene_options)
@@ -60,35 +66,16 @@ class ViewRenderScene(QWidget):
     def init_scene_renderer(self, scene_renderer : SceneRenderer):
         """
         Initializes the scene renderer in this view render scene and view render scene options
-        :param scene_renderer: SceneRenderer
-        :return:
         """
         self._scene_renderer = scene_renderer
         self.sceneLayout.addWidget(scene_renderer.renderer.widget)
 
     @property
-    def scene_renderer(self):
+    def scene_renderer(self) -> SceneRenderer:
         """
         Returns the SceneRender object
-        :return: SceneRenderer
         """
         return self._scene_renderer
-
-    @property
-    def scene_loaded(self):
-        """
-        Returns true if 3d scene was loaded
-        :return: boolean
-        """
-        return self._scene_loaded
-
-    @scene_loaded.setter
-    def scene_loaded(self, is_loaded):
-        """
-        Sets the scene loaded value
-        :param is_loaded: boolean
-        """
-        self._scene_loaded = is_loaded
 
     def enable_view(self, enabled : bool):
         """
@@ -99,72 +86,31 @@ class ViewRenderScene(QWidget):
             self.btnReset.setEnabled(enabled)
             self.btnSceneOptions.setEnabled(enabled)
 
-    def prepare_new_data(self):
+    def load_traced_paths(self, pixel_data : PixelData):
         """
-        Prepare new incoming data, informs the renderer that new data is coming
-        :return:
+        Informs the renderer to visualize the traced paths
         """
-        self._scene_renderer.prepare_new_data()
-
-    def clear_scene_objects(self):
-        """
-        Informs the renderer to clear all objects within the scene
-        :return:
-        """
-        self._scene_renderer.clear_scene_objects()
-        self._scene_loaded = False
-
-    def load_camera(self, camera_data):
-        """
-        Informs the renderer about the camera data,
-        loads the camera data and enables the camera settings
-        :param camera_data:
-        :return:
-        """
-        self._scene_renderer.load_camera(camera_data)
-
-    def load_mesh(self, mesh_data):
-        """
-        Informs the renderer to load a mesh,
-        enables the mesh settings
-        :param mesh_data: MeshData
-        :return:
-        """
-        self._scene_renderer.load_mesh(mesh_data)
-
-    def process_scene_info(self, scene_info : typing.Dict[str, typing.Any]):
-        self._scene_renderer.process_scene_info(scene_info)
-
-    def load_traced_paths(self, render_data):
-        """
-        Informs the renderer to
-        :param render_data:
-        :return:
-        """
-        self._scene_renderer.load_traced_paths(render_data)
+        self._scene_renderer.load_traced_paths(pixel_data)
 
     def clear_traced_paths(self):
         """
         Informs the renderer to clear all visualizes traced paths
-        :return:
         """
         self._scene_renderer.clear_traced_paths()
 
-    def update_path_indices(self, indices):
+    def update_path_indices(self, indices : np.ndarray):
         """
         Updates the view with given path indices keys from controller
         """
         self._scene_renderer.update_path_indices(indices)
 
-    def select_path(self, index):
+    def select_path(self, path_idx : typing.Optional[int]):
         """
         Informs the renderer to visualize the path with index: index
-        :param index: integer
-        :return:
         """
-        self._scene_renderer.select_path(index)
+        self._scene_renderer.select_path(path_idx)
 
-    def select_intersection(self, path_idx, its_idx):
+    def select_intersection(self, path_idx : typing.Optional[int], its_idx : typing.Optional[int]):
         """
         Informs the renderer to select / highlight the intersection with tuple tpl
         """

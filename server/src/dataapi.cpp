@@ -1,7 +1,8 @@
 /*
-	EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
-	comes with an Apache License 2.0
-	(c) Christoph Kreisl 2020
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
+    comes with an Apache License 2.0
+    (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
 	Licensed to the Apache Software Foundation (ASF) under one
 	or more contributor license agreements.  See the NOTICE file
@@ -29,17 +30,17 @@
 
 EMCA_NAMESPACE_BEGIN
 
-void DataApi::setPathIdx(int32_t sampleIdx) {
+void DataApi::setPathIdx(uint32_t sampleIdx) {
     if (!m_isCollecting)
         return;
 	m_currentSampleIdx = sampleIdx;
-    m_currentDepthIdx = -1;
-    if (sampleIdx >= static_cast<int32_t>(m_paths.size()))
+    m_currentDepthIdx = -1U;
+    if (sampleIdx >= m_paths.size())
         m_paths.resize(sampleIdx+1);
     m_paths.at(sampleIdx).m_sampleIdx = sampleIdx; // enable path
 }
 
-void DataApi::setDepthIdx(int32_t depthIdx) {
+void DataApi::setDepthIdx(uint32_t depthIdx) {
     if (!m_isCollecting)
         return;
 	m_currentDepthIdx = depthIdx;
@@ -59,24 +60,24 @@ void DataApi::setIntersectionPos(const Point3f& pos) {
 }
 
 void DataApi::setNextEventEstimationPos(const Point3f& pos, bool visible) {
-    if (!m_isCollecting || m_currentDepthIdx == -1)
+    if (!m_isCollecting || m_currentDepthIdx == -1U)
         return;
     m_paths.at(m_currentSampleIdx).setNextEventEstimationPos(m_currentDepthIdx, pos, visible);
 }
 
-void DataApi::setIntersectionEstimate(const Color3f& estimate) {
-    if (!m_isCollecting || m_currentDepthIdx == -1)
+void DataApi::setIntersectionEstimate(const Color4f& estimate) {
+    if (!m_isCollecting || m_currentDepthIdx == -1U)
         return;
     m_paths.at(m_currentSampleIdx).setIntersectionEstimate(m_currentDepthIdx, estimate);
 }
 
-void DataApi::setIntersectionEmission(const Color3f& emission) {
-    if (!m_isCollecting || m_currentDepthIdx == -1)
+void DataApi::setIntersectionEmission(const Color4f& emission) {
+    if (!m_isCollecting || m_currentDepthIdx == -1U)
         return;
     m_paths.at(m_currentSampleIdx).setIntersectionEmission(m_currentDepthIdx, emission);
 }
 
-void DataApi::setFinalEstimate(const Color3f& estimate) {
+void DataApi::setFinalEstimate(const Color4f& estimate) {
     if (!m_isCollecting)
         return;
     m_paths.at(m_currentSampleIdx).setFinalEstimate(estimate);
@@ -87,7 +88,7 @@ void DataApi::serialize(Stream *stream) const {
     stream->writeUInt(num_paths);
 	/* serialize path data */
     for (auto& path : m_paths) {
-        if (path.m_sampleIdx >= 0) // only send enabled paths
+        if (path.m_sampleIdx != -1U) // only send enabled paths
             path.serialize(stream);
 	}
 }
@@ -127,55 +128,67 @@ void DataApi::PluginApi::printPlugins() const {
         std::cout << "PluginName: " << plugin->getName() << " PluginID: " << id << std::endl;
 }
 
-void DataApi::HeatmapApi::initialize(const std::vector<Mesh>& meshes, const std::vector<uint32_t>& subdivision_budgets) {
-    m_data.clear();
+void DataApi::HeatmapApi::initialize(const std::vector<Mesh>& meshes, uint32_t subdivision_budget) {
+    heatmap_data.clear();
     finalized = false;
 
-    m_data.reserve(meshes.size());
+    heatmap_data.reserve(meshes.size());
 
-    if (subdivision_budgets.empty()) {
+    if (subdivision_budget > 0) {
+        float totalSurfaceArea = std::accumulate(meshes.begin(), meshes.end(), 0.0f, [](float sum, const Mesh& mesh) -> float { return sum+mesh.surfaceArea; });
         for (const auto& mesh : meshes)
-            m_data.emplace_back(&mesh);
+            heatmap_data.emplace_back(&mesh, mesh.surfaceArea/totalSurfaceArea*subdivision_budget);
     }
     else {
-        if (meshes.size() != subdivision_budgets.size())
-            throw std::logic_error("one subdivision budget is required per mesh");
-
-        for (size_t i=0; i<meshes.size(); ++i) {
-            m_data.emplace_back(&meshes.at(i), subdivision_budgets.at(i));
-        }
+        for (const auto& mesh : meshes)
+            heatmap_data.emplace_back(&mesh);
     }
 }
 
-void DataApi::HeatmapApi::addSample(uint32_t mesh_id, const Point3f& p, uint32_t face_id, const Color3f& value, float weight)
+void DataApi::HeatmapApi::reset()
+{
+    std::vector<HeatmapData> new_data;
+
+    finalized = false;
+
+    new_data.reserve(heatmap_data.size());
+    for (const auto& heatmap : heatmap_data)
+        new_data.emplace_back(heatmap.tessellation.getBaseMesh(), (heatmap.tessellation.getMaxNumFaces()-heatmap.tessellation.getBaseMesh()->triangles.size())/4);
+
+    heatmap_data.swap(new_data);
+}
+
+void DataApi::HeatmapApi::addSample(uint32_t mesh_id, const Point3f& p, uint32_t face_id, const Color4f& value, float weight)
 {
     if (!is_collecting)
         return;
-    m_data.at(mesh_id).addSample(p, face_id, value.r(), value.g(), value.b(), weight);
+    heatmap_data.at(mesh_id).addSample(p, face_id, value.r(), value.g(), value.b(), weight);
 }
 
 void DataApi::HeatmapApi::finalize() {
-    if (m_data.empty())
+    is_collecting = false;
+
+    if (heatmap_data.empty())
         return;
 
     if (!finalized)
-        for (auto& heatmap : m_data)
+        for (auto& heatmap : heatmap_data)
             heatmap.finalizeData(density_mode);
 
     finalized = true;
 
     if constexpr (/* disabled */ (false)) {
         // export heatmap data after rendering
-        for (size_t i=0; i<m_data.size(); ++i)
+        for (size_t i=0; i<heatmap_data.size(); ++i)
             exportPLY(std::string("heatmap")+std::to_string(i)+std::string(".ply"), i);
     }
 }
 
 void DataApi::HeatmapApi::exportPLY(const std::string &filename, uint32_t shape_id, bool ascii_mode) const
 {
-    const auto vertices = m_data.at(shape_id).tessellation.computeTessellatedVertices();
-    const auto faces = m_data.at(shape_id).tessellation.computeTessellatedFaces();
-    const auto values = m_data.at(shape_id).computeVertexData();
+    const auto vertices = heatmap_data.at(shape_id).tessellation.computeTessellatedVertices();
+    const auto faces = heatmap_data.at(shape_id).tessellation.computeTessellatedFaces();
+    const auto values = heatmap_data.at(shape_id).computeVertexData();
 
     std::ofstream file(filename, std::ios_base::out);
     file << "ply\n";

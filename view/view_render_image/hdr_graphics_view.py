@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -27,6 +28,13 @@ from PySide2.QtCore import QPoint
 import logging
 
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from view.view_render_image.view_render_image import ViewRenderImage
+else:
+    from typing import Any as ViewRenderImage
+
+
 class HDRGraphicsView(HDRGraphicsViewBase):
 
     """
@@ -34,7 +42,7 @@ class HDRGraphicsView(HDRGraphicsViewBase):
         Custom QGraphicsView which holds the rendered image and handles interactions
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent : ViewRenderImage):
         HDRGraphicsViewBase.__init__(self)
         self._parent = parent
         self._old_scene_pos = QPoint()
@@ -63,7 +71,7 @@ class HDRGraphicsView(HDRGraphicsViewBase):
         if self._old_scene_pos == new_pos:
             pixel = self.transform_to_image_coordinate(q_mouse_event.globalPos())
             if self.pixel_within_bounds(pixel):
-                self._parent.request_render_data(pixel)
+                self._parent.request_pixel_data(pixel)
         super().mouseReleaseEvent(q_mouse_event)
 
     def mouseMoveEvent(self, q_mouse_event):

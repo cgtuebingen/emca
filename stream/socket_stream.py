@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -35,43 +36,39 @@ class SocketStream(Stream):
     Handles read and write from Socket Stream pipeline
     """
 
-    def __init__(self, port=None, hostname=None):
+    def __init__(self, hostname : str = None, port : int = None):
         Stream.__init__(self)
         logging.info("Init SocketStream ...")
-        self._port = port
         self._hostname = hostname or socket.gethostname()
+        self._port = port
         self._socket = None
         self._is_connected = False
 
     @property
-    def port(self):
+    def port(self) -> int:
         """
         Returns the port of the socket stream connection
-        :return: str|int
         """
         return self._port
 
     @port.setter
-    def port(self, port):
+    def port(self, port : int):
         """
         Sets the port of the socket stream connection
-        :param port: str|int
         """
         self._port = port
 
     @property
-    def hostname(self):
+    def hostname(self) -> str:
         """
         Returns the hostname of the socket stream connection
-        :return: str
         """
         return self._hostname
 
     @hostname.setter
-    def hostname(self, hostname):
+    def hostname(self, hostname : str):
         """
         Sets the hostname of the socket stream connection
-        :param hostname: str
         """
         self._hostname = hostname
 
@@ -126,11 +123,9 @@ class SocketStream(Stream):
         self._is_connected = False
         return True, None
 
-    def read(self, size) -> bytes:
+    def read(self, size : int) -> bytes:
         """
         Reads size bytes from the socket stream pipeline
-        :param size: package size
-        :return:
         """
         try:
             data = b''
@@ -147,9 +142,6 @@ class SocketStream(Stream):
     def write(self, data : bytes, size : int):
         """
         Writes data onto the socket stream
-        :param data: bytestream
-        :param size: integer
-        :return:
         """
         try:
             total_sent = 0

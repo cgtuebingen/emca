@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +28,9 @@ from PySide2.QtWidgets import QButtonGroup
 from PySide2.QtWidgets import QStackedWidget
 from PySide2.QtCore import Slot
 from PySide2.QtCore import QPoint
+from core.point import Point2i
 from core.pyside2_uic import loadUi
+from view.view_main.pixel_icon import PixelIcon
 
 from view.view_main.view_options_settings import ViewOptions
 from view.view_main.view_connect_settings import ViewConnectSettings
@@ -35,7 +38,7 @@ from view.view_main.view_filter_settings import ViewFilterSettings
 from view.view_main.view_detector_settings import ViewDetectorSettings
 from view.view_main.view_render_settings import ViewRenderSettings
 
-from view.view_render_data.view_render_data import ViewRenderData
+from view.view_pixel_data.view_pixel_data import ViewPixelData
 from view.view_render_scene.view_render_scene import ViewRenderScene
 from view.view_render_scene.view_render_scene_options import ViewRenderSceneOptions
 from view.view_render_image.view_render_image import ViewRenderImage
@@ -45,6 +48,12 @@ from view.view_sample_contribution.view_sample_depth_plot import ViewSampleDepth
 import os
 
 import logging
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class ViewEMCA(QWidget):
@@ -74,7 +83,7 @@ class ViewEMCA(QWidget):
         self._view_rgb_plot = ViewSampleContribution(parent=self)
         self._view_lum_plot = ViewSampleLuminance(parent=self)
         self._view_depth_plot = ViewSampleDepth(parent=self)
-        self._view_render_data = ViewRenderData(parent=self)
+        self._view_pixel_data = ViewPixelData(parent=self)
         self._view_render_scene = ViewRenderScene(parent=self)
         self._view_render_scene_options = ViewRenderSceneOptions(parent=self)
 
@@ -93,7 +102,7 @@ class ViewEMCA(QWidget):
         self._stacked_widget_right.addWidget(self._view_rgb_plot)
         self._stacked_widget_right.addWidget(self._view_lum_plot)
         self._stacked_widget_right.addWidget(self._view_depth_plot)
-        self._stacked_widget_right.addWidget(self._view_render_data)
+        self._stacked_widget_right.addWidget(self._view_pixel_data)
         self.right.addWidget(self._stacked_widget_right)
 
         # connect signals
@@ -119,7 +128,7 @@ class ViewEMCA(QWidget):
 
         self.cbPixelHistory.currentIndexChanged.connect(self.request_history_pixel)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
         :param controller: Controller
@@ -132,7 +141,7 @@ class ViewEMCA(QWidget):
         self._view_depth_plot.set_controller(controller)
         self._view_render_scene.set_controller(controller)
         self._view_render_scene_options.set_controller(controller)
-        self._view_render_data.set_controller(controller)
+        self._view_pixel_data.set_controller(controller)
         self._view_render_image.set_controller(controller)
         self._view_render_info.set_controller(controller)
         self._view_connect.set_controller(controller)
@@ -281,12 +290,12 @@ class ViewEMCA(QWidget):
         return self._view_render_image
 
     @property
-    def view_render_data(self):
+    def view_pixel_data(self):
         """
         Returns the render data view
         :return: QWidget
         """
-        return self._view_render_data
+        return self._view_pixel_data
 
     @property
     def view_rgb_plot(self):
@@ -370,19 +379,19 @@ class ViewEMCA(QWidget):
             self.layoutPlugins.addWidget(btn_plugin, row, col)
             col = col + 1
 
-    def update_pixel_hist(self, pixel_info):
+    def update_pixel_hist(self, pixel_info : PixelIcon):
         """
         Updates the pixel history
         :param pixel_info: PixelInfo
         :return:
         """
         self.cbPixelHistory.blockSignals(True)
-        text = pixel_info.get_pixel_str()
+        text = str(pixel_info)
         # check if item is already in list
         idx = self.cbPixelHistory.findText(text)
         if idx == -1:
             # item not found, insert new item
-            self.cbPixelHistory.addItem(pixel_info.icon, text)
+            self.cbPixelHistory.addItem(pixel_info, text)
             idx = self.cbPixelHistory.count()-1
             self.cbPixelHistory.setCurrentIndex(idx)
         else:
@@ -402,4 +411,4 @@ class ViewEMCA(QWidget):
         values = text.split(",")
         x, y = int(values[0]), int(values[1])
         logging.info('Request pixel=({},{})'.format(x, y))
-        self._controller.stream.request_render_data(QPoint(x, y))
+        self._controller.stream.request_render_pixel(QPoint(x, y))

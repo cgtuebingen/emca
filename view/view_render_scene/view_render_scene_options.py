@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -115,14 +116,14 @@ class ViewRenderSceneOptions(QWidget):
             self._propagate_signals = False
             self._controller.scene.update_path_options({'active_line_width': value})
             self._propagate_signals = True
-    
+
     @Slot(float)
     def dsb_line_width_changed(self, value : float):
         if self._propagate_signals:
             self._propagate_signals = False
             self._controller.scene.update_path_options({'other_line_width': value})
             self._propagate_signals = True
-    
+
     @Slot(int)
     def slider_active_path_opacity_changed(self, value : int):
         if self._propagate_signals:
@@ -130,7 +131,7 @@ class ViewRenderSceneOptions(QWidget):
             self._propagate_signals = False
             self._controller.scene.update_path_options({'active_opacity': value})
             self._propagate_signals = True
-    
+
     @Slot(int)
     def slider_path_opacity_changed(self, value : int):
         if self._propagate_signals:
@@ -142,7 +143,7 @@ class ViewRenderSceneOptions(QWidget):
     @Slot()
     def pb_reset_path_options_pressed(self):
         self._controller.scene.reset_path_options()
-    
+
     ## Scene options
     @Slot(int)
     def slider_scene_opacity_changed(self, value : int):
@@ -151,7 +152,7 @@ class ViewRenderSceneOptions(QWidget):
             self._propagate_signals = False
             self._controller.scene.update_scene_options({'opacity': value})
             self._propagate_signals = True
-    
+
     @Slot(int)
     def slider_camera_speed_changed(self, value : int):
         if self._propagate_signals:
@@ -159,7 +160,7 @@ class ViewRenderSceneOptions(QWidget):
             self._propagate_signals = False
             self._controller.scene.update_scene_options({'camera_speed': value})
             self._propagate_signals = True
-    
+
     @Slot(bool)
     def cb_camera_focus_intersection_toggled(self, checked : bool):
         if self._propagate_signals:
@@ -170,7 +171,7 @@ class ViewRenderSceneOptions(QWidget):
     @Slot()
     def pb_reset_scene_options_pressed(self):
         self._controller.scene.reset_scene_options()
-    
+
     ## 3D Data options
     @Slot(int)
     def cb_colormap_index_changed(self, value : int):
@@ -178,7 +179,7 @@ class ViewRenderSceneOptions(QWidget):
             self._propagate_signals = False
             self._controller.scene.update_heatmap_options({'cmap': self.cbColormap.currentText()})
             self._propagate_signals = True
-    
+
     @Slot(str)
     def le_cmap_label_changed(self, value : str):
         if self._propagate_signals:
@@ -192,14 +193,14 @@ class ViewRenderSceneOptions(QWidget):
             self._propagate_signals = False
             self._controller.scene.update_heatmap_options({'min': value})
             self._propagate_signals = True
-    
+
     @Slot(float)
     def dsb_cmap_max_changed(self, value : float):
         if self._propagate_signals:
             self._propagate_signals = False
             self._controller.scene.update_heatmap_options({'max': value})
             self._propagate_signals = True
-    
+
     @Slot(bool)
     def cb_show_3d_data_toggled(self, checked : bool):
         if self._propagate_signals:
@@ -217,7 +218,7 @@ class ViewRenderSceneOptions(QWidget):
     @Slot()
     def pb_reset_3d_data_options_pressed(self):
         self._controller.scene.reset_heatmap_options()
-    
+
     def load_path_options(self, path_options : typing.Dict[str, typing.Any]):
         if self._propagate_signals:
             self._propagate_signals = False

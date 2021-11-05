@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,8 +24,6 @@
 """
 
 from stream.stream import Stream
-from core.messages import ServerMsg
-import logging
 
 
 class RenderInfo(object):
@@ -46,16 +45,14 @@ class RenderInfo(object):
         :param stream: SocketStream
         :return:
         """
-        self._renderer_name = self.is_valid_str(stream.read_string())
-        self._scene_name = self.is_valid_str(stream.read_string())
+        self._renderer_name = self.str_or_not_set(stream.read_string())
+        self._scene_name = self.str_or_not_set(stream.read_string())
         self._sample_count = stream.read_uint()
 
     @staticmethod
-    def is_valid_str(s):
+    def str_or_not_set(s : str) -> str:
         """
-        Checks if the string is valid != "not set'
-        :param s: string
-        :return: boolean
+        Returns the non-empty string or "not set'
         """
         if s == "":
             return "not set"
@@ -77,10 +74,9 @@ class RenderInfo(object):
         return self._scene_name
 
     @property
-    def sample_count(self):
+    def sample_count(self) -> int:
         """
         Returns the amount of used samples to render the scene
-        :return: integer
         """
         if self._sample_count is not None:
             return self._sample_count
@@ -88,18 +84,15 @@ class RenderInfo(object):
             return 0
 
     @sample_count.setter
-    def sample_count(self, sample_count):
+    def sample_count(self, sample_count : int):
         """
         Setter function, sets the sample count
-        :param sample_count: integer
-        :return:
         """
         self._sample_count = sample_count
 
-    def to_string(self):
+    def to_string(self) -> str:
         """
         Returns a string containing information about the class
-        :return:
         """
         return 'renderer_name = {} \n' \
                'scene_name = {} \n' \

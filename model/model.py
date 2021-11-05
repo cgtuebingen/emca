@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +23,15 @@
     SOFTWARE.
 """
 
+import typing
+
 from stream.stream import Stream
-from renderer.camera import Camera
 from plugins.plugins_handler import PluginsHandler
 from model.options_data import OptionsConfig
 from model.render_info import RenderInfo
 from model.camera_data import CameraData
 from model.mesh_data import ShapeData
-from model.render_data import RenderData
+from model.pixel_data import PixelData
 from model.contribution_data import SampleContributionData
 from PySide2.QtCore import Signal
 from PySide2.QtCore import QObject
@@ -39,6 +41,12 @@ from detector.detector import Detector
 import numpy as np
 import time
 import logging
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
 
 
 class Model(QObject):
@@ -60,7 +68,7 @@ class Model(QObject):
         self._render_info = RenderInfo()
         self._camera_data = CameraData()
         self._mesh_data = ShapeData()
-        self._render_data = RenderData()
+        self._pixel_data = PixelData()
         self._final_estimate_data = SampleContributionData()
 
         # Model also holds refs to filter and detector
@@ -73,7 +81,6 @@ class Model(QObject):
         self._current_intersection_index = None
 
         self._server_side_supported_plugins = []
-        self._server_render_system = None
         self._controller = None
 
     def set_callback(self, callback):
@@ -82,61 +89,51 @@ class Model(QObject):
         """
         self.sendStateMsgSig.connect(callback)
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Set the connection to the controller
-        :param controller:
-        :return:
         """
         self._controller = controller
         self._plugins_handler.set_controller(controller)
 
     @property
-    def filter(self):
+    def filter(self) -> Filter:
         return self._filter
 
     @property
-    def detector(self):
+    def detector(self) -> Detector:
         return self._detector
 
     @property
-    def current_path_indices(self):
+    def current_path_indices(self) -> np.ndarray:
         return self._current_path_indices
 
     @current_path_indices.setter
-    def current_path_indices(self, indices):
+    def current_path_indices(self, indices : np.ndarray):
         self._current_path_indices = indices
 
     @property
-    def current_path_index(self):
+    def current_path_index(self) -> typing.Optional[int]:
         return self._current_path_index
 
     @current_path_index.setter
-    def current_path_index(self, path_index):
+    def current_path_index(self, path_index : typing.Optional[int]):
         self._current_path_index = path_index
 
     @property
-    def current_intersection_index(self):
+    def current_intersection_index(self) -> typing.Optional[int]:
         return self._current_intersection_index
 
     @current_intersection_index.setter
-    def current_intersection_index(self, intersection_index):
+    def current_intersection_index(self, intersection_index : typing.Optional[int]):
         self._current_intersection_index = intersection_index
 
     @property
-    def server_render_system(self):
-        return self._server_render_system
-
-    @server_render_system.setter
-    def server_render_system(self, server_render_system_type):
-        self._server_render_system = server_render_system_type
-
-    @property
-    def server_side_supported_plugins(self):
+    def server_side_supported_plugins(self) -> typing.List[int]:
         return self._server_side_supported_plugins
 
     @property
-    def plugins_handler(self):
+    def plugins_handler(self) -> PluginsHandler:
         """
         Returns the Plugins Handler
         :return:
@@ -144,7 +141,7 @@ class Model(QObject):
         return self._plugins_handler
 
     @property
-    def render_info(self):
+    def render_info(self) -> RenderInfo:
         """
         Returns the Render Info
         :return:
@@ -152,7 +149,7 @@ class Model(QObject):
         return self._render_info
 
     @property
-    def camera_data(self):
+    def camera_data(self) -> CameraData:
         """
         Returns the Camera Data
         :return:
@@ -160,35 +157,30 @@ class Model(QObject):
         return self._camera_data
 
     @property
-    def mesh_data(self):
+    def mesh_data(self) -> ShapeData:
         """
         Returns the Mesh Data
-        :return:
         """
         return self._mesh_data
 
     @property
-    def render_data(self):
+    def pixel_data(self) -> PixelData:
         """
-        Returns the Render Data.
-        All gathered information of one pixel
-        :return:
+        Returns the gathered information of one pixel
         """
-        return self._render_data
+        return self._pixel_data
 
     @property
-    def final_estimate_data(self):
+    def final_estimate_data(self) -> SampleContributionData:
         """
         Returns the Final Estimate Plot Data
-        :return:
         """
         return self._final_estimate_data
 
     @property
-    def options_data(self):
+    def options_data(self) -> OptionsConfig:
         """
         Returns the options loaded from .ini file
-        :return: Options Object
         """
         return self._options
 
@@ -196,8 +188,6 @@ class Model(QObject):
     def render_info(self, new_render_info : RenderInfo):
         """
         Set function for Render Info data
-        :param new_render_info:
-        :return:
         """
         self._render_info = new_render_info
 
@@ -205,8 +195,6 @@ class Model(QObject):
     def camera_data(self, new_camera_data : CameraData):
         """
         Set function for Camera data
-        :param new_camera_data:
-        :return:
         """
         self._camera_data = new_camera_data
 
@@ -214,25 +202,20 @@ class Model(QObject):
     def mesh_data(self, new_mesh_data : ShapeData):
         """
         Set function for Mesh data
-        :param new_mesh_data:
-        :return:
         """
         self._mesh_data = new_mesh_data
 
-    @render_data.setter
-    def render_data(self, new_render_data : RenderData):
+    @pixel_data.setter
+    def pixel_data(self, new_pixel_data : PixelData):
         """
         Set function for Render data
-        :param new_render_data:
-        :return:
         """
-        self._render_data = new_render_data
+        self._pixel_data = new_pixel_data
 
     def prepare_new_data(self):
         """
         Resets the current selected path|intersection|indices and
         calls the PluginsHandler prepare_new_data function.
-        :return:
         """
         self._plugins_handler.prepare_new_data()
         self._current_path_indices = np.array([], dtype=np.int32)
@@ -242,8 +225,6 @@ class Model(QObject):
     def deserialize_supported_plugins(self, stream : Stream):
         """
         Deserialize list of supported plugin keys
-        :param stream:
-        :return:
         """
         #start = time.time()
         self._server_side_supported_plugins.clear()
@@ -258,8 +239,6 @@ class Model(QObject):
         """
         Serialize the Render Info data and informs the controller about it
         Sends data to the server
-        :param stream:
-        :return:
         """
         #start = time.time()
         self._render_info.serialize(stream)
@@ -269,8 +248,6 @@ class Model(QObject):
         """
         Deserialize the Render Info data and informs the controller about it
         Reads data from the socket stream
-        :param stream:
-        :return:
         """
         start = time.time()
         self._render_info.deserialize(stream)
@@ -280,8 +257,6 @@ class Model(QObject):
     def deserialize_camera(self, stream : Stream):
         """
         Deserialize the Camera data and informs the controller about it
-        :param stream:
-        :return:
         """
         #start = time.time()
         self._camera_data.deserialize(stream)
@@ -291,8 +266,6 @@ class Model(QObject):
     def deserialize_scene_objects(self, stream : Stream):
         """
         Deserialize Mesh data (3D Scene objects) and informs the controller about it
-        :param stream:
-        :return:
         """
         start = time.time()
         has_heatmap_data = stream.read_bool()
@@ -319,22 +292,13 @@ class Model(QObject):
         if has_heatmap_data: # send a signal to update the max value
             self.sendStateMsgSig.emit((StateMsg.DATA_SCENE_INFO, None))
 
-        logging.info('loaded scene in: {:.3}s'.format(time.time() - start))
+        logging.info('loaded scene with {} meshes in: {:.3}s'.format(num_meshes, time.time() - start))
 
-    def deserialize_render_data(self, stream : Stream):
+    def deserialize_pixel_data(self, stream : Stream):
         """
-        Deserialize Render data and informs the controller about it
-        :param stream:
-        :return:
+        Deserialize Pixel data and informs the controller about it
         """
         #start = time.time()
-        self._render_data.deserialize(stream)
+        self._pixel_data.deserialize(stream)
         #logging.info('deserialize render data in: {:.3}s'.format(time.time() - start))
-        self.sendStateMsgSig.emit((StateMsg.DATA_RENDER, self._render_data))
-
-    def load_sample_contribution_data(self, dict_paths):
-        """
-        Return the Final Estimate data and informs the controller about it
-        :return:
-        """
-        return self._final_estimate_data.load_final_estimate_from_data(dict_paths)
+        self.sendStateMsgSig.emit((StateMsg.DATA_PIXEL, self._pixel_data))

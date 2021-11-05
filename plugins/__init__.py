@@ -30,6 +30,5 @@ from plugins.plugin_spherical_view.plugin_spherical_view import SphericalView
 
 __all__ = [
     'IntersectionData',
-    #'PathDepth',
     'SphericalView',
 ]

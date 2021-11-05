@@ -1,7 +1,8 @@
 /*
-    EMCA - Explorer Monte-Carlo based Alorithm (Shared Server Library)
+    EMCA - Explorer of Monte Carlo based Alorithms (Shared Server Library)
     comes with an Apache License 2.0
     (c) Christoph Kreisl 2020
+    (c) Lukas Ruppert 2021
 
     Licensed to the Apache Software Foundation (ASF) under one
     or more contributor license agreements.  See the NOTICE file
@@ -70,16 +71,16 @@ public:
             return subdivisions.at(face_id);
         }
 
-        Vec3i getFace(uint32_t id) const {
+        Vec3u getFace(uint32_t id) const {
             if (id < base_mesh->triangles.size())
                 return base_mesh->triangles.at(id);
             return faces.at(id-base_mesh->triangles.size());
         }
 
-        Point3f getVertex(int32_t id) const {
-            if (static_cast<size_t>(id) < base_mesh->vertices.size())
-                return base_mesh->vertices.at(static_cast<size_t>(id));
-            return vertices.at(static_cast<size_t>(id)-base_mesh->vertices.size());
+        Point3f getVertex(uint32_t id) const {
+            if (id < base_mesh->vertices.size())
+                return base_mesh->vertices.at(id);
+            return vertices.at(id-base_mesh->vertices.size());
         }
 
         uint32_t getMaxNumVertices() const {
@@ -107,7 +108,7 @@ public:
         uint32_t getTessellatedFace(const Point3f& p, uint32_t face) const;
 
         std::vector<Point3f> computeTessellatedVertices() const;
-        std::vector<Vec3i> computeTessellatedFaces() const;
+        std::vector<Vec3u> computeTessellatedFaces() const;
 
         const Mesh* getBaseMesh() const { return base_mesh; }
 
@@ -118,7 +119,7 @@ public:
         // new vertices that need to be added to the base mesh for tessellation
         std::vector<Point3f> vertices;
         // new faces that need to be added to the base mesh for tessellation (including those that are replaced by further subdivisions)
-        std::vector<Vec3i> faces;
+        std::vector<Vec3u> faces;
         // base index of replacement faces per face (0 if not subdivided, subdivided into faces a (+0), b (+1), c (+2), and mid (+3))
         // TODO: this should be std::atomic<uint32_t>, but int reads and writes should be atomic either way and atomic<...> disables default move operations, making this much uglier to do.
         std::vector<uint32_t> subdivisions;
@@ -126,7 +127,7 @@ public:
         // cache of midpoints created for tessellation (low vertex id) -> (high vertex id, midpoint vertex id)
         // allows to re-use midpoints on adjacent faces
         // only access this when the mutex is locked
-        std::unordered_multimap<int32_t, std::pair<int32_t, int32_t>> midpoint_cache;
+        std::unordered_multimap<uint32_t, std::pair<uint32_t, uint32_t>> midpoint_cache;
 
         // number of additional vertices and faces
         // only modify these when the mutex is locked
@@ -144,7 +145,7 @@ public:
          * @param vertex_b
          * @return
          */
-        int32_t createMidpoint(int32_t vertex_a, int32_t vertex_b);
+        uint32_t createMidpoint(uint32_t vertex_a, uint32_t vertex_b);
     };
 
     struct alignas(16) IncrementalMean {

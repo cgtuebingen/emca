@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,6 +23,7 @@
     SOFTWARE.
 """
 
+from PySide2.QtGui import QPixmap
 from core.hdr_image import HDRImage
 from PySide2.QtWidgets import QGraphicsPixmapItem
 from PySide2.QtWidgets import QGraphicsScene
@@ -50,21 +52,15 @@ class HDRGraphicsViewBase(QGraphicsView):
         self.setScene(self._scene)
 
     @property
-    def hdr_image(self):
-        if self._hdri:
-            return self._hdri
-        return None
+    def hdr_image(self) -> HDRImage:
+        return self._hdri
 
     @property
-    def pixmap(self):
+    def pixmap(self) -> QPixmap:
         """
-        Returns the rendered image as pixmap if there is one,
-        otherwise None will be returned
-        :return: QPixmap or None
+        Returns the rendered image as pixmap
         """
-        if self._hdri:
-            return self._hdri.pixmap
-        return None
+        return self._hdri.pixmap
 
     @property
     def pixmap_item(self):
@@ -128,26 +124,21 @@ class HDRGraphicsViewBase(QGraphicsView):
         self.translate(delta.x(), delta.y())
         q_wheel_event.accept()
 
-    def set_falsecolor(self, falsecolor):
-        if self._hdri:
-            self._hdri.falsecolor = falsecolor
-            self.display_image(self.pixmap)
+    def set_falsecolor(self, falsecolor : bool):
+        self._hdri.falsecolor = falsecolor
+        self.display_image(self.pixmap)
 
-    def set_plusminus(self, plusminus):
-        if self._hdri:
-            self._hdri.plusminus = plusminus
-            self.display_image(self.pixmap)
+    def set_plusminus(self, plusminus : bool):
+        self._hdri.plusminus = plusminus
+        self.display_image(self.pixmap)
 
-    def set_show_ref(self, show_ref):
-        if self._hdri:
-            self._hdri.show_ref = show_ref
-            self.display_image(self.pixmap)
+    def set_show_ref(self, show_ref : bool):
+        self._hdri.show_ref = show_ref
+        self.display_image(self.pixmap)
 
-    def transform_to_image_coordinate(self, pos):
+    def transform_to_image_coordinate(self, pos : QPoint) -> QPoint:
         """
         Transforms the selected position into image coordinates space
-        :param pos: QPoint
-        :return: QPoint
         """
         if self._pixmap_item is None:
             return QPoint(0, 0)
@@ -158,11 +149,9 @@ class HDRGraphicsViewBase(QGraphicsView):
         y = math.floor(item_local_pos.y())
         return QPoint(x, y)
 
-    def transform_to_scene_pos(self, pos):
+    def transform_to_scene_pos(self, pos : QPoint) -> QPoint:
         """
         Transforms a point into scene space
-        :param pos: QPoint
-        :return: QPoint
         """
         local_pos = self.mapFromGlobal(pos)
         scene_pos = self.mapToScene(local_pos)
@@ -170,12 +159,10 @@ class HDRGraphicsViewBase(QGraphicsView):
         y = math.floor(scene_pos.y())
         return QPoint(x, y)
 
-    def pixel_within_bounds(self, pixel):
+    def pixel_within_bounds(self, pixel : QPoint) -> bool:
         """
         Checks if the selected pixel is within the image ranges,
         returns false if no image is available or the coordinates are out of range
-        :param pixel: QPoint
-        :return: boolean
         """
         if not self._hdri.is_pixmap_set():
             return False
@@ -187,10 +174,9 @@ class HDRGraphicsViewBase(QGraphicsView):
             return b1 and b2
         return False
 
-    def display_image(self, pixmap):
+    def display_image(self, pixmap : QPixmap):
         """
         Displays the image within the view
-        :return:
         """
         if len(self._scene.items()) > 0 and self._pixmap_item:
             self._pixmap_item.setPixmap(pixmap)
@@ -199,18 +185,20 @@ class HDRGraphicsViewBase(QGraphicsView):
             item.setFlag(QGraphicsPixmapItem.ItemIsMovable)
             self.fitInView(item, Qt.KeepAspectRatio)
             self._pixmap_item = item
+        # make sure the image fills the viewport
+        self.reset()
 
-    def update_image(self, pixmap):
+    def update_image(self, pixmap : QPixmap):
         """
         Updates the render image in the view
-        :return:
         """
         items_list = self._scene.items()
         for item in items_list:
             if isinstance(item, QGraphicsPixmapItem):
                 item.setPixmap(pixmap)
 
-    def load_hdr_image(self, filepath, reference=False):
+    # FIXME: have a separate function for loading the reference image
+    def load_hdr_image(self, filepath, reference : bool = False) -> bool:
         """
         Loads a hdr (exr) image from a given filepath or bytestream
         Returns true if the image was successfully loaded
@@ -221,20 +209,16 @@ class HDRGraphicsViewBase(QGraphicsView):
         self.display_image(self._hdri.pixmap)
         return success
 
-    def update_exposure(self, value):
+    def update_exposure(self, value : float):
         """
         Updates the exposure of the image, informs the HDRImage class.
-        :param value: float
-        :return:
         """
-        if self._hdri:
-            self._hdri.exposure = value
-            self.update_image(self._hdri.pixmap)
+        self._hdri.exposure = value
+        self.update_image(self._hdri.pixmap)
 
     def reset(self):
         """
         Resets the image view. Image sets to fit in view.
-        :return:
         """
         if self._pixmap_item:
             self.fitInView(self._pixmap_item, Qt.KeepAspectRatio)

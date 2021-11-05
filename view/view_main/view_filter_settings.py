@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,19 +23,69 @@
     SOFTWARE.
 """
 
+from PySide2.QtGui import QKeyEvent
 from core.pyside2_uic import loadUi
-from filter.filter_list_item import FilterListItem
 from PySide2.QtCore import Slot
-from PySide2.QtWidgets import QWidget
+from PySide2.QtWidgets import QFormLayout, QLabel, QWidget
 from PySide2.QtWidgets import QApplication
 from PySide2.QtWidgets import QListWidgetItem
 from PySide2.QtCore import Qt
-from core.point2 import Point2f
-from core.point2 import Point2i
-from core.point3 import Point3f
-from core.point3 import Point3i
-from core.color3 import Color3f
+from core.point import Point2f, Point2i, Point3f, Point3i
+from core.color import Color4f
 import os
+from filter.filter_settings import FilterType
+
+from model.pixel_data import PixelData
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from controller.controller import Controller
+else:
+    from typing import Any as Controller
+
+
+class FilterListItem(QWidget):
+
+    """
+        FilterListItem
+        Represents a filter list item holding information about the filter
+    """
+
+    def __init__(self, filter_settings):
+        QWidget.__init__(self)
+
+        self._idx = filter_settings.get_idx()
+
+        layout = QFormLayout()
+        d_type = filter_settings.get_type()
+        constraint = filter_settings.get_constraint()
+        text = filter_settings.get_text()
+
+        if d_type is FilterType.SCALAR:
+            layout.addRow("Scalar:", QLabel(text))
+            layout.addRow("val: ", QLabel(str(constraint[0])))
+        elif d_type is FilterType.POINT2:
+            layout.addRow("Point2:", QLabel(""))
+            layout.addRow("x: ", QLabel(str(constraint[0])))
+            layout.addRow("y: ", QLabel(str(constraint[1])))
+        elif d_type is FilterType.POINT3:
+            layout.addRow("Point3:", QLabel(text))
+            layout.addRow("x: ", QLabel(str(constraint[0])))
+            layout.addRow("y: ", QLabel(str(constraint[1])))
+            layout.addRow("z: ", QLabel(str(constraint[2])))
+        elif d_type is FilterType.COLOR3:
+            layout.addRow("Color3:", QLabel(text))
+            layout.addRow("r: ", QLabel(str(constraint[0])))
+            layout.addRow("g: ", QLabel(str(constraint[1])))
+            layout.addRow("b: ", QLabel(str(constraint[2])))
+        self.setLayout(layout)
+
+    def get_idx(self):
+        """
+        Returns an index referencing the filter settings index
+        :return: integer
+        """
+        return self._idx
 
 
 class ViewFilterSettings(QWidget):
@@ -76,7 +127,7 @@ class ViewFilterSettings(QWidget):
 
         self.filterList.setStyleSheet("QListWidget::item { border-bottom: 1px solid black; }")
 
-    def set_controller(self, controller):
+    def set_controller(self, controller : Controller):
         """
         Sets the connection to the controller
         :param controller: Controller
@@ -88,22 +139,19 @@ class ViewFilterSettings(QWidget):
         self.btnDeleteFilter.clicked.connect(controller.filter.delete_filter)
         self.btnAddFilter.clicked.connect(controller.filter.add_filter)
 
-    def prepare_new_data(self):
+    def clear(self):
         """
         Prepare view for new incoming data
-        :return:
         """
         # self._filter_items.clear()
         self.combItems.clear()
 
-    def init_data(self, render_data):
+    def init_data(self, pixel_data : PixelData):
         """
         Initialise the view
-        :param render_data: RenderData
-        :return:
         """
         # iterate through all paths and their vertices
-        for _, path in render_data.dict_paths.items():
+        for _, path in pixel_data.dict_paths.items():
 
             # pathinfo stuff sample_idx, final_estimate, path_depth
             if path.sample_idx:
@@ -146,12 +194,10 @@ class ViewFilterSettings(QWidget):
         """
         return self.cbFilterEnabled.isChecked()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event : QKeyEvent):
         """
         Handles key press enter events.
         Checks if the enter key is pressed to apply the filter
-        :param event:
-        :return:
         """
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
             self._controller.filter.add_filter(True)
@@ -178,7 +224,7 @@ class ViewFilterSettings(QWidget):
                 self.stackedWidget.setCurrentIndex(1)
             elif isinstance(item, Point3f) or isinstance(item, Point3i):
                 self.stackedWidget.setCurrentIndex(2)
-            elif isinstance(item, Color3f):
+            elif isinstance(item, Color4f):
                 self.stackedWidget.setCurrentIndex(3)
 
     @Slot(str, name='le_point_2x')

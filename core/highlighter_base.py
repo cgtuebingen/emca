@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,10 +23,11 @@
     SOFTWARE.
 """
 
+from matplotlib.figure import Figure
+from matplotlib.axes import Axes
 from matplotlib.widgets import RectangleSelector
 import numpy as np
 import logging
-import abc
 
 
 rectprops = dict(
@@ -37,7 +39,7 @@ rectprops = dict(
 
 class HighlighterBase(object):
 
-    def __init__(self, figure, axes, callback):
+    def __init__(self, figure : Figure, axes : Axes, callback):
         self.fig = figure
         self.axes = axes
         self.canvas = self.fig.canvas
@@ -51,7 +53,7 @@ class HighlighterBase(object):
         self._hold_shift = False
         self.callback_send_update_path = callback
 
-    def add_rectangle_selector(self, axes, select_func):
+    def add_rectangle_selector(self, axes : Axes, select_func):
         rs = RectangleSelector(axes, select_func, useblit=True, rectprops=rectprops)
         self._rs.append(rs)
 
@@ -86,11 +88,11 @@ class HighlighterBase(object):
             logging.info("Shift release")
             self._hold_shift = False
 
-    def enable_rectangle_selector(self, enable):
+    def enable_rectangle_selector(self, enable : bool):
         for rs in self._rs:
             rs.set_active(enable)
 
-    def enable_pick_event_selector(self, enable):
+    def enable_pick_event_selector(self, enable : bool):
         if enable:
             logging.info("connect pick event")
             self._cid_pick = self.fig.canvas.mpl_connect('pick_event', self.pick_event)
@@ -98,7 +100,7 @@ class HighlighterBase(object):
             logging.info("disconnect pick event")
             self.fig.canvas.mpl_disconnect(self._cid_pick)
 
-    def enable_multi_selection(self, enabled):
+    def enable_multi_selection(self, enabled : bool):
         if enabled:
             self._cid_toggle = self.fig.canvas.mpl_connect('key_press_event', self.key_press_event)
             self._cid_release = self.fig.canvas.mpl_connect('key_release_event', self.key_release_event)
@@ -113,11 +115,3 @@ class HighlighterBase(object):
         x0, x1 = sorted([event1.xdata, event2.xdata])
         y0, y1 = sorted([event1.ydata, event2.ydata])
         return (x > x0) & (x < x1) & (y > y0) & (y < y1)
-
-
-
-
-
-
-
-

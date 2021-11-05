@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -30,12 +31,12 @@ from PySide2.QtCore import Qt
 import numpy as np
 import logging
 
-white = 'white'
-params = {'ytick.color': white,
-          'xtick.color': white,
-          'axes.labelcolor': white,
-          'axes.edgecolor': white}
-plt.rcParams.update(params)
+plt.rcParams.update({
+    'ytick.color': 'white',
+    'xtick.color': 'white',
+    'axes.labelcolor': 'white',
+    'axes.edgecolor': 'white'
+})
 
 
 class FigureBase(FigureCanvas):
@@ -65,7 +66,7 @@ class FigureBase(FigureCanvas):
     def create_navigation_toolbar(self, parent=None):
         return NavigationToolBar(self, parent)
 
-    def apply_theme(self, theme):
+    def apply_theme(self, theme : str):
         if theme == 'light':
             self.RGBA = '#EFF0F1'
             self.plot_facecolor = '#EFF0F1'

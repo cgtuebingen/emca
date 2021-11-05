@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -22,7 +23,7 @@
     SOFTWARE.
 """
 
-from core.color3 import Color3f
+from core.color import Color4f
 
 import numpy as np
 import vtk
@@ -31,8 +32,8 @@ class Shape(vtk.vtkActor):
 
     def __init__(self,
                  mesh_poly_data : vtk.vtkPolyData,
-                 color_diffuse : Color3f = Color3f(1, 1, 1),
-                 color_specular : Color3f = Color3f(0, 0, 0)):
+                 color_diffuse : Color4f = Color4f(1, 1, 1),
+                 color_specular : Color4f = Color4f(0, 0, 0)):
         super().__init__()
 
         self._mapper = vtk.vtkPolyDataMapper()
@@ -45,10 +46,10 @@ class Shape(vtk.vtkActor):
         self.GetProperty().LightingOn()
         self.GetProperty().SetShading(True)
         self.GetProperty().ShadingOn()
-        self.GetProperty().SetDiffuseColor(color_diffuse)
+        self.GetProperty().SetDiffuseColor(color_diffuse[0:3])
         self.GetProperty().SetDiffuse(1)
-        if not np.allclose(color_specular, Color3f(0,0,0)):
-            self.GetProperty().SetSpecularColor(color_specular)
+        if not np.allclose(color_specular, Color4f(0,0,0)):
+            self.GetProperty().SetSpecularColor(color_specular[0:3])
             self.GetProperty().SetSpecular(np.mean(np.array(color_specular))/np.mean(np.array(color_specular+color_diffuse)))
         self.GetProperty().SetAmbient(0)
 
@@ -84,43 +85,43 @@ class Shape(vtk.vtkActor):
         self.GetProperty().SetOpacity(value)
 
     @property
-    def color(self) -> Color3f:
+    def color(self) -> Color4f:
         """
         Returns the actual color of the object
         :return: list
         """
-        return Color3f(self.GetProperty().GetColor())
+        return Color4f(self.GetProperty().GetColor())
 
     @color.setter
-    def color(self, color : Color3f):
+    def color(self, color : Color4f):
         """
         Sets the current color of the object
         """
         self.GetProperty().SetColor(color)
 
     @property
-    def color_diffuse(self) -> Color3f:
+    def color_diffuse(self) -> Color4f:
         """
         Returns the current diffuse color of the object
         """
-        return Color3f(self.GetProperty().GetDiffuseColor())
+        return Color4f(self.GetProperty().GetDiffuseColor())
 
     @color_diffuse.setter
-    def color_diffuse(self, color_diffuse : Color3f):
+    def color_diffuse(self, color_diffuse : Color4f):
         """
         Sets the diffuse color of the object
         """
         self.GetProperty().SetDiffuseColor(color_diffuse)
 
     @property
-    def color_specular(self) -> Color3f:
+    def color_specular(self) -> Color4f:
         """
         Return the current specular color of the object
         """
-        return Color3f(self.GetProperty().GetSpecularColor())
+        return Color4f(self.GetProperty().GetSpecularColor())
 
     @color_specular.setter
-    def color_specular(self, color_specular : Color3f):
+    def color_specular(self, color_specular : Color4f):
         """
         Sets the specular color of the object
         """
