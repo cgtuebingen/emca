@@ -2,6 +2,7 @@
     MIT License
 
     Copyright (c) 2020 Christoph Kreisl
+    Copyright (c) 2021 Lukas Ruppert
 
     Permission is hereby granted, free of charge, to any person obtaining a copy
     of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +24,6 @@
 """
 
 from plugins.plugin_intersection_data.plugin_intersection_data_plots import IntersectionData
-#from plugins.plugin_path_depth.plugin_path_depth import PathDepth
 from plugins.plugin_spherical_view.plugin_spherical_view import SphericalView
 
 # In order to initialize your plugin, import your plugin here and add it to __all__ list.
