@@ -22,7 +22,7 @@
 	under the License.
 */
 
-#include "heatmapdata.h"
+#include <emca/heatmapdata.h>
 
 #include <atomic>
 #include <algorithm>

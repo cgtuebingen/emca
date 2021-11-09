@@ -22,9 +22,9 @@
     under the License.
 */
 
-#include "emcaserver.h"
-#include "scenedata.h"
-#include "messages.h"
+#include <emca/emcaserver.h>
+#include <emca/scenedata.h>
+#include <emca/messages.h>
 
 #include <string.h>
 #include <unistd.h>
