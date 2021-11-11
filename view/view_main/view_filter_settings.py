@@ -169,7 +169,7 @@ class ViewFilterSettings(QWidget):
             # add path user data
             for key_user, value_user in path.data.items():
                 # add item if not in list
-                if not self._filter_items.get(key_user, None):
+                if self._filter_items.get(key_user, None) is not None:
                     self._filter_items[key_user] = value_user
 
             # iterate over intersection points
